@@ -3,8 +3,6 @@
 A full-stack restaurant web application built with **React**, **Node.js**, **Express**, and **MongoDB**.  
 It allows customers to view menu items, make reservations, place orders, and manage their profile. Admins can manage menu items, view reservations, and track orders.
 
----
-
 ## Features
 
 ### Customer Side
@@ -27,8 +25,6 @@ It allows customers to view menu items, make reservations, place orders, and man
 - Role-based authentication and authorization
 - RESTful API backend
 
----
-
 ## Tech Stack
 
 - **Frontend**: React, React Router DOM, Tailwind CSS
@@ -37,11 +33,9 @@ It allows customers to view menu items, make reservations, place orders, and man
 - **Authentication**: JWT, bcryptjs
 - **Utilities**: express-async-handler
 
----
-
 ## Project Structure
 
-``
+```bash
 DineX/
 ├── backend/
 │ ├── controllers/
@@ -78,34 +72,45 @@ DineX/
 │ │ ├── App.jsx
 │ │ └── index.css
 └── README.md
+```
 
-``
+### Installation
 
----
-
-## Installation
-
-### Backend
+**Backend:**
 ```bash
 cd backend
 npm install
 ```
 
-## Create a .env file with:
+1. **Create a .env file with:**
 ```bash
 MONGO_URI=<your_mongodb_connection_string>
 JWT_SECRET=<your_jwt_secret>
 JWT_EXPIRES_IN=30d
 PORT=5000
 ```
-## Start backend:
+2. **Start backend:**
 ```bash
 npm run dev
 ```
 
-### Frontend
+**Frontend**
 ```bash
 cd frontend
 npm install
 npm start
 ```
+### API Endpoints
+
+```bash
+POST /api/auth/register - Register user
+POST /api/auth/login - Login user
+GET /api/user/profile - Get logged-in user's profile 
+GET /api/admin/menu - Get all menu items (admin)
+POST /api/admin/menu - Create menu item (admin)
+PUT /api/admin/menu/:id - Update menu item (admin)
+DELETE /api/admin/menu/:id - Delete menu item (admin)
+GET /api/admin/reservations - Get all reservations (admin)
+```
+</br>
+<p align="center"> Made with ❤️ by Madubashini </p>
