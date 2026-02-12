@@ -61,3 +61,64 @@ export const getAllReservations = asyncHandler(async (req, res) => {
     const reservations = await Reservation.find({}).populate('user', 'name email');
     res.json(reservations);
 });
+
+// Update reservation status (Pending, Confirmed, Cancelled)
+export const updateReservationStatus = asyncHandler(async (req, res) => {
+    const reservation = await Reservation.findById(req.params.id);
+    if (!reservation) {
+        res.status(404);
+        throw new Error('Reservation not found');
+    }
+    const { status } = req.body;
+    if (!['Pending', 'Confirmed', 'Cancelled'].includes(status)) {
+        res.status(400);
+        throw new Error('Invalid status value');
+    }
+    reservation.status = status;
+    const updatedReservation = await reservation.save();
+    res.json(updatedReservation);
+});
+
+// ========================= ORDERS ========================
+export const getAllOrders = asyncHandler(async (req, res) => {
+    const orders = await Order.find({}).populate('user', 'name email');
+    res.json(orders);
+});
+
+export const updateOrderStatus = asyncHandler(async (req, res) => {
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+        res.status(404);
+        throw new Error('Order not found');
+    }
+    const { status } = req.body;
+    if (!['Pending', 'Processing', 'Completed', 'Cancelled'].includes(status)) {
+        res.status(400);
+        throw new Error('Invalid status value');
+    }
+    order.status = status;
+    const updatedOrder = await order.save();
+    res.json(updatedOrder);
+});
+
+// ========================= USERS =========================
+export const getAllUsers = asyncHandler(async (req, res) => {
+    const users = await User.find({}).select('-password');
+    res.json(users);
+});
+
+export const updateUserRole = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+        res.status(404);
+        throw new Error('User not found');
+    }
+    const { role } = req.body;
+    if (!['customer', 'admin'].includes(role)) {
+        res.status(400);
+        throw new Error('Invalid role');
+    }
+    user.role = role;
+    const updatedUser = await user.save();
+    res.json(updatedUser);
+});
