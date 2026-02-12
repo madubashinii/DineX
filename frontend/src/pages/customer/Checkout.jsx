@@ -30,7 +30,6 @@ export default function CheckoutPage() {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        // Handle checkout logic here
         alert('Order placed successfully!');
         localStorage.removeItem('cart');
         window.location.href = '/';
@@ -45,7 +44,6 @@ export default function CheckoutPage() {
         <div className="min-h-screen bg-black">
             <Header />
 
-            {/* Page Header */}
             <section className="pt-32 pb-16 px-6 bg-gradient-to-b from-zinc-900 to-black">
                 <div className="max-w-7xl mx-auto text-center">
                     <h1 className="text-5xl md:text-6xl font-serif text-white mb-4">Checkout</h1>
@@ -53,14 +51,13 @@ export default function CheckoutPage() {
                 </div>
             </section>
 
-            {/* Checkout Content */}
             <section className="py-16 px-6 bg-black">
                 <div className="max-w-6xl mx-auto">
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        {/* Checkout Form */}
+
                         <div className="lg:col-span-2">
                             <form onSubmit={handleSubmit} className="space-y-8">
-                                {/* Personal Information */}
+
                                 <div className="bg-zinc-900 rounded-lg p-6 border border-amber-400/20">
                                     <h2 className="text-2xl font-serif text-white mb-6">Personal Information</h2>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -109,7 +106,6 @@ export default function CheckoutPage() {
                                     </div>
                                 </div>
 
-                                {/* Delivery Address */}
                                 <div className="bg-zinc-900 rounded-lg p-6 border border-amber-400/20">
                                     <h2 className="text-2xl font-serif text-white mb-6">Delivery Address</h2>
                                     <div className="space-y-4">
@@ -214,7 +210,6 @@ export default function CheckoutPage() {
                                     </div>
                                 </div>
 
-                                {/* Place Order Button */}
                                 <button
                                     type="submit"
                                     className="w-full bg-gradient-to-r from-amber-400 to-yellow-500 text-black 
@@ -232,13 +227,15 @@ export default function CheckoutPage() {
                             <div className="bg-zinc-900 rounded-lg p-6 border border-amber-400/20 sticky top-24">
                                 <h2 className="text-2xl font-serif text-white mb-6">Order Summary</h2>
 
-                                {/* Cart Items */}
                                 <div className="space-y-3 mb-6 max-h-64 overflow-y-auto">
                                     {cartItems.map((item) => (
                                         <div key={item.id} className="flex items-center gap-3 pb-3 border-b border-amber-400/10">
-                                            <div className="w-12 h-12 bg-gradient-to-br from-zinc-800 to-zinc-900 
-                                                          rounded flex items-center justify-center text-2xl flex-shrink-0">
-                                                {item.image}
+                                            <div className="w-12 h-12 rounded overflow-hidden flex-shrink-0">
+                                                <img
+                                                    src={item.image}
+                                                    alt={item.name}
+                                                    className="w-full h-full object-cover"
+                                                />
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-white text-sm truncate">{item.name}</p>
@@ -251,7 +248,6 @@ export default function CheckoutPage() {
                                     ))}
                                 </div>
 
-                                {/* Price Breakdown */}
                                 <div className="space-y-3 mb-6">
                                     <div className="flex justify-between text-gray-400 text-sm">
                                         <span>Subtotal</span>
@@ -273,7 +269,6 @@ export default function CheckoutPage() {
                                     </div>
                                 </div>
 
-                                {/* Security Notice */}
                                 <div className="bg-black/50 rounded p-3 border border-amber-400/20">
                                     <div className="flex items-start gap-2">
                                         <svg className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">

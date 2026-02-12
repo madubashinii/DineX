@@ -1,10 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 
 export default function MenuPage() {
     const [activeCategory, setActiveCategory] = useState('all');
-    const [cart, setCart] = useState([]);
 
     const categories = ['All', 'Appetizers', 'Main Course', 'Desserts', 'Beverages'];
 
@@ -15,7 +14,7 @@ export default function MenuPage() {
             description: 'Premium A5 Japanese Wagyu, perfectly seared with truffle butter',
             price: 89,
             category: 'Main Course',
-            image: '🥩'
+            image: '/images/menu/main/wagyu-beef-steak.jpg'
         },
         {
             id: 2,
@@ -23,7 +22,7 @@ export default function MenuPage() {
             description: 'Fresh Atlantic lobster in creamy brandy sauce with Gruyère',
             price: 75,
             category: 'Main Course',
-            image: '🦞'
+            image: '/images/menu/main/lobster-thermidor.jpg'
         },
         {
             id: 3,
@@ -31,7 +30,7 @@ export default function MenuPage() {
             description: 'Handmade pasta with black truffle and Parmigiano-Reggiano',
             price: 62,
             category: 'Main Course',
-            image: '🍝'
+            image: '/images/menu/main/truffle-pasta.jpg'
         },
         {
             id: 4,
@@ -39,7 +38,7 @@ export default function MenuPage() {
             description: 'Pan-seared sea bass with lemon beurre blanc',
             price: 68,
             category: 'Main Course',
-            image: '🐟'
+            image: '/images/menu/main/chilean-sea-bass.jpg'
         },
         {
             id: 5,
@@ -47,7 +46,7 @@ export default function MenuPage() {
             description: 'Seared foie gras with caramelized figs and brioche',
             price: 45,
             category: 'Appetizers',
-            image: '🍖'
+            image: '/images/menu/appetizers/foie-gras.jpg'
         },
         {
             id: 6,
@@ -55,7 +54,7 @@ export default function MenuPage() {
             description: 'Fresh oysters baked with herbs and parmesan',
             price: 38,
             category: 'Appetizers',
-            image: '🦪'
+            image: '/images/menu/appetizers/oysters-rockefeller.jpg'
         },
         {
             id: 7,
@@ -63,23 +62,23 @@ export default function MenuPage() {
             description: 'Fresh tuna with avocado, sesame, and wasabi aioli',
             price: 32,
             category: 'Appetizers',
-            image: '🐟'
+            image: '/images/menu/appetizers/tuna-tartare.jpg'
         },
         {
             id: 8,
-            name: 'Chocolate Soufflé',
+            name: 'Chocolate Souffle',
             description: 'Belgian chocolate soufflé with vanilla ice cream',
             price: 28,
             category: 'Desserts',
-            image: '🍰'
+            image: '/images/menu/desserts/chocolate-souffle.jpg'
         },
         {
             id: 9,
-            name: 'Crème Brûlée',
+            name: 'Creme Brulee',
             description: 'Classic French custard with caramelized sugar',
             price: 24,
             category: 'Desserts',
-            image: '🍮'
+            image: '/images/menu/desserts/creme-brulee.jpg'
         },
         {
             id: 10,
@@ -87,7 +86,7 @@ export default function MenuPage() {
             description: 'Italian coffee-soaked ladyfingers with mascarpone',
             price: 22,
             category: 'Desserts',
-            image: '🍰'
+            image: '/images/menu/desserts/tiramisu.jpg'
         },
         {
             id: 11,
@@ -95,7 +94,7 @@ export default function MenuPage() {
             description: 'Sommelier-selected wines matched to your meal',
             price: 45,
             category: 'Beverages',
-            image: '🍷'
+            image: '/images/menu/beverages/wine.jpg'
         },
         {
             id: 12,
@@ -103,7 +102,7 @@ export default function MenuPage() {
             description: 'Signature cocktails crafted by our mixologists',
             price: 18,
             category: 'Beverages',
-            image: '🍸'
+            image: '/images/menu/beverages/cocktails.jpg'
         }
     ];
 
@@ -112,7 +111,6 @@ export default function MenuPage() {
         : menuItems.filter(item => item.category.toLowerCase() === activeCategory);
 
     const handleAddToCart = (item) => {
-        // Add item to cart (save to localStorage for persistence)
         const existingCart = JSON.parse(localStorage.getItem('cart') || '[]');
         const existingItemIndex = existingCart.findIndex(cartItem => cartItem.id === item.id);
 
@@ -123,17 +121,13 @@ export default function MenuPage() {
         }
 
         localStorage.setItem('cart', JSON.stringify(existingCart));
-        setCart(existingCart);
-
-        // Navigate to cart page
-        window.location.href = '/cart'; // Or use React Router: navigate('/cart')
+        window.location.href = '/cart';
     };
 
     return (
         <div className="min-h-screen bg-black">
             <Header />
 
-            {/* Page Header */}
             <section className="pt-32 pb-16 px-6 bg-gradient-to-b from-zinc-900 to-black">
                 <div className="max-w-7xl mx-auto text-center">
                     <h1 className="text-5xl md:text-6xl font-serif text-white mb-4">Our Menu</h1>
@@ -141,7 +135,6 @@ export default function MenuPage() {
                 </div>
             </section>
 
-            {/* Category Filter */}
             <section className="py-8 px-6 bg-black border-b border-amber-400/20">
                 <div className="max-w-7xl mx-auto">
                     <div className="flex flex-wrap justify-center gap-4">
@@ -150,8 +143,8 @@ export default function MenuPage() {
                                 key={category}
                                 onClick={() => setActiveCategory(category.toLowerCase())}
                                 className={`px-6 py-2 rounded-full text-sm uppercase tracking-wider transition-all duration-300 ${activeCategory === category.toLowerCase()
-                                        ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-black font-semibold'
-                                        : 'bg-zinc-900 text-gray-400 hover:text-amber-400 border border-amber-400/30'
+                                    ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-black font-semibold'
+                                    : 'bg-zinc-900 text-gray-400 hover:text-amber-400 border border-amber-400/30'
                                     }`}
                             >
                                 {category}
@@ -161,7 +154,6 @@ export default function MenuPage() {
                 </div>
             </section>
 
-            {/* Menu Items Grid */}
             <section className="py-16 px-6 bg-black">
                 <div className="max-w-7xl mx-auto">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -172,10 +164,17 @@ export default function MenuPage() {
                                          hover:border-amber-400/50 transition-all duration-300 
                                          hover:shadow-lg hover:shadow-amber-500/20"
                             >
-                                {/* Item Image */}
-                                <div className="h-48 bg-gradient-to-br from-zinc-800 to-zinc-900 
-                                              flex items-center justify-center text-7xl">
-                                    {item.image}
+
+                                <div className="h-56 w-full overflow-hidden">
+                                    <img
+                                        src={item.image}
+                                        alt={item.name}
+                                        className="w-full h-full object-cover object-center"
+                                        onError={(e) => {
+                                            e.target.style.display = 'none';
+                                            e.target.parentElement.innerHTML = '<div class="w-full h-full flex items-center justify-center bg-zinc-800 text-6xl">🍽️</div>';
+                                        }}
+                                    />
                                 </div>
 
                                 {/* Item Details */}

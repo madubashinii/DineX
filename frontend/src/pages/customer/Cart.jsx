@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 export default function CartPage() {
     const navigate = useNavigate();
@@ -45,7 +45,6 @@ export default function CartPage() {
         <div className="min-h-screen bg-black">
             <Header />
 
-            {/* Page Header */}
             <section className="pt-32 pb-16 px-6 bg-gradient-to-b from-zinc-900 to-black">
                 <div className="max-w-7xl mx-auto text-center">
                     <h1 className="text-5xl md:text-6xl font-serif text-white mb-4">Your Cart</h1>
@@ -53,7 +52,6 @@ export default function CartPage() {
                 </div>
             </section>
 
-            {/* Cart Content */}
             <section className="py-16 px-6 bg-black">
                 <div className="max-w-5xl mx-auto">
                     {cartItems.length === 0 ? (
@@ -61,19 +59,19 @@ export default function CartPage() {
                             <div className="text-8xl mb-6">🛒</div>
                             <h2 className="text-3xl font-serif text-white mb-4">Your cart is empty</h2>
                             <p className="text-gray-400 mb-8">Add some delicious items to get started</p>
-                            <a
-                                href="/menu"
+                            <Link
+                                to="/menu"
                                 className="inline-block bg-gradient-to-r from-amber-400 to-yellow-500 text-black 
-                                         px-8 py-3 rounded-md font-semibold uppercase tracking-wider
-                                         hover:shadow-lg hover:shadow-amber-500/50 
-                                         hover:-translate-y-0.5 transition-all duration-300"
+    px-8 py-3 rounded-md font-semibold uppercase tracking-wider
+    hover:shadow-lg hover:shadow-amber-500/50 
+    hover:-translate-y-0.5 transition-all duration-300"
                             >
                                 Browse Menu
-                            </a>
+                            </Link>
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                            {/* Cart Items */}
+
                             <div className="lg:col-span-2 space-y-4">
                                 {cartItems.map((item) => (
                                     <div
@@ -82,18 +80,20 @@ export default function CartPage() {
                                                  hover:border-amber-400/50 transition-all duration-300"
                                     >
                                         <div className="flex items-center gap-6">
-                                            {/* Item Image */}
-                                            <div className="w-24 h-24 bg-gradient-to-br from-zinc-800 to-zinc-900 
-                                                          rounded-lg flex items-center justify-center text-4xl flex-shrink-0">
-                                                {item.image}
+
+                                            <div className="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0">
+                                                <img
+                                                    src={item.image}
+                                                    alt={item.name}
+                                                    className="w-full h-full object-cover"
+                                                />
                                             </div>
 
-                                            {/* Item Details */}
                                             <div className="flex-1">
                                                 <h3 className="text-xl font-serif text-white mb-1">{item.name}</h3>
                                                 <p className="text-gray-400 text-sm mb-3">{item.description}</p>
                                                 <div className="flex items-center gap-4">
-                                                    {/* Quantity Controls */}
+
                                                     <div className="flex items-center gap-2">
                                                         <button
                                                             onClick={() => updateQuantity(item.id, item.quantity - 1)}
@@ -116,12 +116,10 @@ export default function CartPage() {
                                                         </button>
                                                     </div>
 
-                                                    {/* Price */}
                                                     <span className="text-2xl font-bold text-amber-400">
                                                         ${item.price * item.quantity}
                                                     </span>
 
-                                                    {/* Remove Button */}
                                                     <button
                                                         onClick={() => removeItem(item.id)}
                                                         className="ml-auto text-gray-400 hover:text-red-500 
@@ -138,7 +136,6 @@ export default function CartPage() {
                                     </div>
                                 ))}
 
-                                {/* Clear Cart Button */}
                                 <button
                                     onClick={clearCart}
                                     className="w-full bg-zinc-900 text-gray-400 py-3 rounded-md 
@@ -181,14 +178,14 @@ export default function CartPage() {
                                         Proceed to Checkout
                                     </button>
 
-                                    <a
-                                        href="/menu"
+                                    <Link
+                                        to="/menu"
                                         className="block w-full text-center bg-zinc-800 text-amber-400 
-                                                 py-3 rounded-md font-semibold border border-amber-400/30
-                                                 hover:bg-amber-400/10 transition-all duration-300"
+    py-3 rounded-md font-semibold border border-amber-400/30
+    hover:bg-amber-400/10 transition-all duration-300"
                                     >
                                         Continue Shopping
-                                    </a>
+                                    </Link>
                                 </div>
                             </div>
                         </div>
