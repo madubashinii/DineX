@@ -118,7 +118,7 @@ export default function Header() {
                         )}
 
                         <button
-                            onClick={() => handleNavClick('menu')}
+                            onClick={() => navigate('/reserve')}
                             className="bg-gradient-to-r from-amber-400 to-yellow-500 text-black 
                        px-6 py-2.5 rounded-sm font-semibold text-sm uppercase tracking-wider
                        hover:shadow-lg hover:shadow-amber-500/50 hover:-translate-y-0.5
@@ -210,7 +210,7 @@ export default function Header() {
                         <li>
                             <button
                                 onClick={() => {
-                                    handleNavClick('menu');
+                                    navigate('/reserve');
                                     setIsMobileMenuOpen(false);
                                 }}
                                 className="w-full bg-gradient-to-r from-amber-400 to-yellow-500 text-black 
