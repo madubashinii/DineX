@@ -89,7 +89,6 @@ export default function ProfilePage() {
         <div className="min-h-screen bg-black">
             <Header />
 
-            {/* Page Header */}
             <section className="pt-32 pb-16 px-6 bg-gradient-to-b from-zinc-900 to-black">
                 <div className="max-w-7xl mx-auto text-center">
                     <h1 className="text-5xl md:text-6xl font-serif text-white mb-4">My Profile</h1>
@@ -97,14 +96,13 @@ export default function ProfilePage() {
                 </div>
             </section>
 
-            {/* Profile Content */}
             <section className="py-16 px-6 bg-black">
                 <div className="max-w-5xl mx-auto">
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        {/* Sidebar */}
+
                         <div className="lg:col-span-1">
                             <div className="bg-zinc-900 rounded-lg p-6 border border-amber-400/20">
-                                {/* Avatar */}
+
                                 <div className="text-center mb-6">
                                     <div className="w-24 h-24 mx-auto bg-gradient-to-r from-amber-400 to-yellow-500 
                                                   rounded-full flex items-center justify-center text-4xl text-black font-bold">
@@ -114,7 +112,6 @@ export default function ProfilePage() {
                                     <p className="text-gray-400 text-sm">{userInfo.email}</p>
                                 </div>
 
-                                {/* Actions */}
                                 <div className="space-y-3">
                                     <button
                                         onClick={handleEditToggle}
@@ -137,9 +134,8 @@ export default function ProfilePage() {
                             </div>
                         </div>
 
-                        {/* Main Content */}
                         <div className="lg:col-span-2 space-y-8">
-                            {/* Basic Info */}
+
                             <div className="bg-zinc-900 rounded-lg p-6 border border-amber-400/20">
                                 <h2 className="text-2xl font-serif text-white mb-6">Basic Information</h2>
 

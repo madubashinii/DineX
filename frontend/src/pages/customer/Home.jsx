@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import { useNavigate } from 'react-router-dom';
+import { ChefHat, Leaf, Sparkles, Wine } from 'lucide-react';
 
 export default function HomePage() {
     const navigate = useNavigate();
@@ -11,71 +12,71 @@ export default function HomePage() {
         {
             id: 1,
             name: 'Wagyu Beef Steak',
-            description: 'Premium A5 Japanese Wagyu, perfectly seared and served with truffle butter',
+            description: 'Premium A5 Japanese Wagyu, perfectly seared with truffle butter',
             price: 89,
-            emoji: '🥩',
             category: 'Main Course',
+            image: '/images/menu/main/wagyu-beef-steak.jpg'
         },
         {
             id: 2,
             name: 'Lobster Thermidor',
-            description: 'Fresh Atlantic lobster in a creamy brandy sauce with Gruyère cheese',
+            description: 'Fresh Atlantic lobster in creamy brandy sauce with Gruyère',
             price: 75,
-            emoji: '🦞',
-            category: 'Seafood',
+            category: 'Main Course',
+            image: '/images/menu/main/lobster-thermidor.jpg'
         },
         {
             id: 3,
             name: 'Truffle Pasta',
-            description: 'Handmade pasta with black truffle shavings and Parmigiano-Reggiano',
+            description: 'Handmade pasta with black truffle and Parmigiano-Reggiano',
             price: 62,
-            emoji: '🍝',
-            category: 'Pasta',
+            category: 'Main Course',
+            image: '/images/menu/main/truffle-pasta.jpg'
         },
         {
             id: 4,
             name: 'Chilean Sea Bass',
-            description: 'Pan-seared sea bass with lemon beurre blanc and seasonal vegetables',
+            description: 'Pan-seared sea bass with lemon beurre blanc',
             price: 68,
-            emoji: '🐟',
-            category: 'Seafood',
+            category: 'Main Course',
+            image: '/images/menu/main/chilean-sea-bass.jpg'
         },
         {
-            id: 5,
-            name: 'Chocolate Soufflé',
-            description: 'Light and airy Belgian chocolate soufflé with vanilla bean ice cream',
+            id: 8,
+            name: 'Chocolate Souffle',
+            description: 'Belgian chocolate soufflé with vanilla ice cream',
             price: 28,
-            emoji: '🍰',
-            category: 'Dessert',
+            category: 'Desserts',
+            image: '/images/menu/desserts/chocolate-souffle.jpg'
         },
         {
-            id: 6,
+            id: 11,
             name: 'Wine Pairing',
-            description: 'Sommelier-selected wines perfectly matched to your dining experience',
+            description: 'Sommelier-selected wines matched to your meal',
             price: 45,
-            emoji: '🍷',
             category: 'Beverages',
+            image: '/images/menu/beverages/wine.jpg'
         },
     ];
 
     const features = [
         {
-            icon: '👨‍🍳',
+            icon: <ChefHat size={60} />,
             title: 'Master Chefs',
             description: 'Our award-winning chefs bring decades of culinary expertise and innovation to every plate',
         },
         {
-            icon: '🌿',
+            icon: <Leaf size={60} />,
             title: 'Fresh Ingredients',
             description: 'We source only the finest organic and locally-sourced ingredients daily',
         },
         {
-            icon: '✨',
+            icon: <Sparkles size={60} />,
             title: 'Premium Experience',
             description: 'Impeccable service and elegant ambiance create unforgettable dining moments',
         },
         {
-            icon: '🍾',
+            icon: <Wine size={60} />,
             title: 'Curated Selection',
             description: 'Extensive wine cellar featuring rare vintages from renowned vineyards worldwide',
         },
@@ -85,39 +86,45 @@ export default function HomePage() {
         {
             id: 1,
             text: 'An absolutely exquisite dining experience. The Wagyu steak was perfectly cooked, and the ambiance transported us to another world. Worth every penny!',
-            author: 'Sarah Mitchell',
+            author: 'Sunil Perera',
             title: 'Food Critic, Gourmet Magazine',
             rating: 5,
         },
         {
             id: 2,
             text: 'The attention to detail is remarkable. From the moment we walked in until dessert, every aspect was flawless. The truffle pasta is a must-try!',
-            author: 'James Rodriguez',
-            title: 'Executive Chef, NYC',
+            author: 'Aruni Silva',
+            title: 'Executive Chef, ABC',
             rating: 5,
         },
         {
             id: 3,
             text: 'DineX has redefined fine dining for me. The wine pairing was exceptional, and the staff\'s knowledge and service were impeccable. Highly recommend!',
-            author: 'Emily Chen',
+            author: 'Pubudu Eranga',
             title: 'Wine Enthusiast',
             rating: 5,
         },
     ];
 
     const handleAddToCart = (item) => {
-        const existingItem = cartItems.find((cartItem) => cartItem.id === item.id);
+        const savedCart = JSON.parse(localStorage.getItem('cart') || '[]');
+
+        const existingItem = savedCart.find((cartItem) => cartItem.id === item.id);
+
+        let updatedCart;
+
         if (existingItem) {
-            setCartItems(
-                cartItems.map((cartItem) =>
-                    cartItem.id === item.id
-                        ? { ...cartItem, quantity: cartItem.quantity + 1 }
-                        : cartItem
-                )
+            updatedCart = savedCart.map((cartItem) =>
+                cartItem.id === item.id
+                    ? { ...cartItem, quantity: cartItem.quantity + 1 }
+                    : cartItem
             );
         } else {
-            setCartItems([...cartItems, { ...item, quantity: 1 }]);
+            updatedCart = [...savedCart, { ...item, quantity: 1 }];
         }
+
+        localStorage.setItem('cart', JSON.stringify(updatedCart));
+        navigate('/cart');
     };
 
     return (
@@ -163,7 +170,7 @@ export default function HomePage() {
                               duration-300 origin-left"></div>
                             </button>
                             <button
-                                onClick={() => document.getElementById('menu')?.scrollIntoView({ behavior: 'smooth' })}
+                                onClick={() => navigate('/menu')}
                                 className="px-10 py-4 border-2 border-amber-400 text-amber-400 font-bold 
                          text-lg rounded-sm uppercase tracking-wider
                          hover:bg-amber-400 hover:text-black
@@ -209,21 +216,23 @@ export default function HomePage() {
                          hover:-translate-y-2"
                                 style={{ animationDelay: `${index * 100}ms` }}
                             >
-                                {/* Image Placeholder */}
-                                <div className="relative h-64 bg-gradient-to-br from-zinc-800 to-zinc-900 
-                              flex items-center justify-center overflow-hidden">
+
+                                <div className="relative h-64 overflow-hidden">
+                                    <img
+                                        src={item.image}
+                                        alt={item.name}
+                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                    />
+
                                     <div className="absolute inset-0 bg-amber-400/10 opacity-0 
-                                group-hover:opacity-100 transition-opacity duration-500"></div>
-                                    <span className="text-8xl transform group-hover:scale-110 transition-transform duration-500">
-                                        {item.emoji}
-                                    </span>
+        group-hover:opacity-100 transition-opacity duration-500"></div>
+
                                     <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-sm 
-                                px-3 py-1 rounded-full text-xs text-amber-400 border border-amber-400/30">
+        px-3 py-1 rounded-full text-xs text-amber-400 border border-amber-400/30">
                                         {item.category}
                                     </div>
                                 </div>
 
-                                {/* Content */}
                                 <div className="p-6">
                                     <h3 className="text-2xl font-serif mb-2 text-white">{item.name}</h3>
                                     <p className="text-gray-400 text-sm mb-4 leading-relaxed">
@@ -281,8 +290,7 @@ export default function HomePage() {
                                 className="text-center p-8 rounded-lg hover:bg-zinc-900 
                          transition-all duration-300 group"
                             >
-                                <div className="text-7xl mb-6 transform group-hover:scale-110 
-                              transition-transform duration-300">
+                                <div className="text-amber-400 mb-6 flex justify-center">
                                     {feature.icon}
                                 </div>
                                 <h3 className="text-2xl font-serif mb-4 text-white">{feature.title}</h3>
