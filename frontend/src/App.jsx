@@ -8,6 +8,7 @@ import Checkout from './pages/customer/Checkout'
 import Profile from './pages/customer/Profile'
 import AdminDashboard from './pages/admin/Dashboard'
 import ProtectedRoute from './routes/ProtectedRoute'
+import ReservePage from './pages/customer/ReservePage';
 
 function App() {
   return (
@@ -52,6 +53,9 @@ function App() {
             // </ProtectedRoute>
           }
         />
+
+        <Route path="/reserve" element={<ReservePage />} />
+
         {/* Protected Admin Routes */}
         <Route
           path="/admin"
