@@ -6,7 +6,7 @@ import Cart from './pages/customer/Cart'
 import MenuPage from './pages/customer/MenuPage';
 import Checkout from './pages/customer/Checkout'
 import Profile from './pages/customer/Profile'
-import AdminDashboard from './pages/admin/Dashboard'
+import AdminDashboard from './pages/admin/AdminDashboard'
 import ProtectedRoute from './routes/ProtectedRoute'
 import ReservePage from './pages/customer/ReservePage';
 
@@ -60,9 +60,10 @@ function App() {
         <Route
           path="/admin"
           element={
-            <ProtectedRoute role="admin">
-              <AdminDashboard />
-            </ProtectedRoute>
+            <AdminDashboard />
+            // <ProtectedRoute role="admin">
+            //   <AdminDashboard />
+            // </ProtectedRoute>
           }
         />
       </Routes>
