@@ -1,12 +1,31 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import API from '../../api/axios';
 
 export default function Login() {
     const navigate = useNavigate();
+    const [formData, setFormData] = useState({ email: '', password: '' });
+    const [error, setError] = useState('');
 
-    const handleSubmit = (e) => {
+    const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // Handle login logic here
-        console.log('Login submitted');
+        setError('');
+
+        try {
+            const res = await API.post('/auth/login', formData);
+
+            console.log(res.data);
+            localStorage.setItem('token', res.data.token);
+            alert('Login successful!');
+            navigate('/');
+        } catch (err) {
+            console.error(err.response?.data || err.message);
+            setError(err.response?.data?.message || 'Something went wrong');
+        }
     };
 
     return (
@@ -30,6 +49,9 @@ export default function Login() {
                             <label className="block text-sm text-gray-300 mb-2">Email Address</label>
                             <input
                                 type="email"
+                                name="email"
+                                value={formData.email}
+                                onChange={handleChange}
                                 required
                                 className="w-full px-4 py-3 bg-black/50 border border-amber-400/30 rounded-md 
                                          text-white placeholder-gray-500 focus:outline-none focus:border-amber-400 
@@ -42,6 +64,9 @@ export default function Login() {
                             <label className="block text-sm text-gray-300 mb-2">Password</label>
                             <input
                                 type="password"
+                                name="password"
+                                value={formData.password}
+                                onChange={handleChange}
                                 required
                                 className="w-full px-4 py-3 bg-black/50 border border-amber-400/30 rounded-md 
                                          text-white placeholder-gray-500 focus:outline-none focus:border-amber-400 
