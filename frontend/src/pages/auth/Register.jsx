@@ -1,13 +1,48 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import API from '../../api/axios';
 
 export default function Register() {
     const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        // Handle registration logic here
-        console.log('Registration submitted');
+    const [formData, setFormData] = useState({
+        name: '',
+        email: '',
+        phone: '',
+        password: '',
+        confirmPassword: ''
+    });
+    const [error, setError] = useState('');
+
+    const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
     };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+
+        if (formData.password !== formData.confirmPassword) {
+            setError('Passwords do not match');
+            return;
+        }
+
+        try {
+            const res = await API.post('/auth/register', {
+                name: formData.name,
+                email: formData.email,
+                password: formData.password
+            });
+
+            console.log(res.data);
+            alert('Registration successful! Please login.');
+            navigate('/login');
+        } catch (err) {
+            console.error(err.response?.data || err.message);
+            setError(err.response?.data?.message || 'Something went wrong');
+        }
+    };
+
 
     return (
         <div className="min-h-screen bg-black flex items-center justify-center px-4 py-12">
@@ -30,6 +65,9 @@ export default function Register() {
                             <label className="block text-sm text-gray-300 mb-2">Full Name</label>
                             <input
                                 type="text"
+                                name="name"
+                                value={formData.name}
+                                onChange={handleChange}
                                 required
                                 className="w-full px-4 py-3 bg-black/50 border border-amber-400/30 rounded-md 
                                          text-white placeholder-gray-500 focus:outline-none focus:border-amber-400 
@@ -42,6 +80,7 @@ export default function Register() {
                             <label className="block text-sm text-gray-300 mb-2">Email Address</label>
                             <input
                                 type="email"
+                                name="email" value={formData.email} onChange={handleChange}
                                 required
                                 className="w-full px-4 py-3 bg-black/50 border border-amber-400/30 rounded-md 
                                          text-white placeholder-gray-500 focus:outline-none focus:border-amber-400 
@@ -54,6 +93,7 @@ export default function Register() {
                             <label className="block text-sm text-gray-300 mb-2">Phone Number</label>
                             <input
                                 type="tel"
+                                name="phone" value={formData.phone} onChange={handleChange}
                                 required
                                 className="w-full px-4 py-3 bg-black/50 border border-amber-400/30 rounded-md 
                                          text-white placeholder-gray-500 focus:outline-none focus:border-amber-400 
@@ -66,6 +106,7 @@ export default function Register() {
                             <label className="block text-sm text-gray-300 mb-2">Password</label>
                             <input
                                 type="password"
+                                name="password" value={formData.password} onChange={handleChange}
                                 required
                                 className="w-full px-4 py-3 bg-black/50 border border-amber-400/30 rounded-md 
                                          text-white placeholder-gray-500 focus:outline-none focus:border-amber-400 
@@ -78,6 +119,7 @@ export default function Register() {
                             <label className="block text-sm text-gray-300 mb-2">Confirm Password</label>
                             <input
                                 type="password"
+                                name="confirmPassword" value={formData.confirmPassword} onChange={handleChange}
                                 required
                                 className="w-full px-4 py-3 bg-black/50 border border-amber-400/30 rounded-md 
                                          text-white placeholder-gray-500 focus:outline-none focus:border-amber-400 
