@@ -1,110 +1,27 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
+import API from '../../api/axios';
+import { useNavigate } from 'react-router-dom';
 
 export default function MenuPage() {
     const [activeCategory, setActiveCategory] = useState('all');
-
+    const [menuItems, setMenuItems] = useState([]);
+    const navigate = useNavigate();
     const categories = ['All', 'Appetizers', 'Main Course', 'Desserts', 'Beverages'];
 
-    const menuItems = [
-        {
-            id: 1,
-            name: 'Wagyu Beef Steak',
-            description: 'Premium A5 Japanese Wagyu, perfectly seared with truffle butter',
-            price: 89,
-            category: 'Main Course',
-            image: '/images/menu/main/wagyu-beef-steak.jpg'
-        },
-        {
-            id: 2,
-            name: 'Lobster Thermidor',
-            description: 'Fresh Atlantic lobster in creamy brandy sauce with Gruyère',
-            price: 75,
-            category: 'Main Course',
-            image: '/images/menu/main/lobster-thermidor.jpg'
-        },
-        {
-            id: 3,
-            name: 'Truffle Pasta',
-            description: 'Handmade pasta with black truffle and Parmigiano-Reggiano',
-            price: 62,
-            category: 'Main Course',
-            image: '/images/menu/main/truffle-pasta.jpg'
-        },
-        {
-            id: 4,
-            name: 'Chilean Sea Bass',
-            description: 'Pan-seared sea bass with lemon beurre blanc',
-            price: 68,
-            category: 'Main Course',
-            image: '/images/menu/main/chilean-sea-bass.jpg'
-        },
-        {
-            id: 5,
-            name: 'Foie Gras',
-            description: 'Seared foie gras with caramelized figs and brioche',
-            price: 45,
-            category: 'Appetizers',
-            image: '/images/menu/appetizers/foie-gras.jpg'
-        },
-        {
-            id: 6,
-            name: 'Oysters Rockefeller',
-            description: 'Fresh oysters baked with herbs and parmesan',
-            price: 38,
-            category: 'Appetizers',
-            image: '/images/menu/appetizers/oysters-rockefeller.jpg'
-        },
-        {
-            id: 7,
-            name: 'Tuna Tartare',
-            description: 'Fresh tuna with avocado, sesame, and wasabi aioli',
-            price: 32,
-            category: 'Appetizers',
-            image: '/images/menu/appetizers/tuna-tartare.jpg'
-        },
-        {
-            id: 8,
-            name: 'Chocolate Souffle',
-            description: 'Belgian chocolate soufflé with vanilla ice cream',
-            price: 28,
-            category: 'Desserts',
-            image: '/images/menu/desserts/chocolate-souffle.jpg'
-        },
-        {
-            id: 9,
-            name: 'Creme Brulee',
-            description: 'Classic French custard with caramelized sugar',
-            price: 24,
-            category: 'Desserts',
-            image: '/images/menu/desserts/creme-brulee.jpg'
-        },
-        {
-            id: 10,
-            name: 'Tiramisu',
-            description: 'Italian coffee-soaked ladyfingers with mascarpone',
-            price: 22,
-            category: 'Desserts',
-            image: '/images/menu/desserts/tiramisu.jpg'
-        },
-        {
-            id: 11,
-            name: 'Wine Pairing',
-            description: 'Sommelier-selected wines matched to your meal',
-            price: 45,
-            category: 'Beverages',
-            image: '/images/menu/beverages/wine.jpg'
-        },
-        {
-            id: 12,
-            name: 'Craft Cocktails',
-            description: 'Signature cocktails crafted by our mixologists',
-            price: 18,
-            category: 'Beverages',
-            image: '/images/menu/beverages/cocktails.jpg'
-        }
-    ];
+    useEffect(() => {
+        const fetchMenu = async () => {
+            try {
+                const { data } = await API.get('/menu');
+                setMenuItems(data);
+            } catch (error) {
+                console.error('Error fetching menu:', error);
+            }
+        };
+
+        fetchMenu();
+    }, []);
 
     const filteredItems = activeCategory === 'all'
         ? menuItems
@@ -112,7 +29,7 @@ export default function MenuPage() {
 
     const handleAddToCart = (item) => {
         const existingCart = JSON.parse(localStorage.getItem('cart') || '[]');
-        const existingItemIndex = existingCart.findIndex(cartItem => cartItem.id === item.id);
+        const existingItemIndex = existingCart.findIndex(cartItem => cartItem._id === item._id);
 
         if (existingItemIndex > -1) {
             existingCart[existingItemIndex].quantity += 1;
@@ -121,7 +38,7 @@ export default function MenuPage() {
         }
 
         localStorage.setItem('cart', JSON.stringify(existingCart));
-        window.location.href = '/cart';
+        navigate('/cart');
     };
 
     return (
@@ -159,7 +76,7 @@ export default function MenuPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {filteredItems.map((item) => (
                             <div
-                                key={item.id}
+                                key={item._id}
                                 className="bg-zinc-900 rounded-lg overflow-hidden border border-amber-400/20 
                                          hover:border-amber-400/50 transition-all duration-300 
                                          hover:shadow-lg hover:shadow-amber-500/20"
