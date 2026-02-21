@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import API from '../../api/axios';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import { useNavigate } from 'react-router-dom';
@@ -7,57 +8,19 @@ import { ChefHat, Leaf, Sparkles, Wine } from 'lucide-react';
 export default function HomePage() {
     const navigate = useNavigate();
     const [cartItems, setCartItems] = useState([]);
+    const [menuItems, setMenuItems] = useState([]);
 
-    const menuItems = [
-        {
-            id: 1,
-            name: 'Wagyu Beef Steak',
-            description: 'Premium A5 Japanese Wagyu, perfectly seared with truffle butter',
-            price: 89,
-            category: 'Main Course',
-            image: '/images/menu/main/wagyu-beef-steak.jpg'
-        },
-        {
-            id: 2,
-            name: 'Lobster Thermidor',
-            description: 'Fresh Atlantic lobster in creamy brandy sauce with Gruyère',
-            price: 75,
-            category: 'Main Course',
-            image: '/images/menu/main/lobster-thermidor.jpg'
-        },
-        {
-            id: 3,
-            name: 'Truffle Pasta',
-            description: 'Handmade pasta with black truffle and Parmigiano-Reggiano',
-            price: 62,
-            category: 'Main Course',
-            image: '/images/menu/main/truffle-pasta.jpg'
-        },
-        {
-            id: 4,
-            name: 'Chilean Sea Bass',
-            description: 'Pan-seared sea bass with lemon beurre blanc',
-            price: 68,
-            category: 'Main Course',
-            image: '/images/menu/main/chilean-sea-bass.jpg'
-        },
-        {
-            id: 8,
-            name: 'Chocolate Souffle',
-            description: 'Belgian chocolate soufflé with vanilla ice cream',
-            price: 28,
-            category: 'Desserts',
-            image: '/images/menu/desserts/chocolate-souffle.jpg'
-        },
-        {
-            id: 11,
-            name: 'Wine Pairing',
-            description: 'Sommelier-selected wines matched to your meal',
-            price: 45,
-            category: 'Beverages',
-            image: '/images/menu/beverages/wine.jpg'
-        },
-    ];
+    useEffect(() => {
+        const fetchMenu = async () => {
+            try {
+                const { data } = await API.get('/menu');
+                setMenuItems(data);
+            } catch (error) {
+                console.error('Error fetching menu:', error);
+            }
+        };
+        fetchMenu();
+    }, []);
 
     const features = [
         {
@@ -109,13 +72,13 @@ export default function HomePage() {
     const handleAddToCart = (item) => {
         const savedCart = JSON.parse(localStorage.getItem('cart') || '[]');
 
-        const existingItem = savedCart.find((cartItem) => cartItem.id === item.id);
+        const existingItem = savedCart.find((cartItem) => cartItem._id === item._id);
 
         let updatedCart;
 
         if (existingItem) {
             updatedCart = savedCart.map((cartItem) =>
-                cartItem.id === item.id
+                cartItem._id === item._id
                     ? { ...cartItem, quantity: cartItem.quantity + 1 }
                     : cartItem
             );
@@ -126,6 +89,8 @@ export default function HomePage() {
         localStorage.setItem('cart', JSON.stringify(updatedCart));
         navigate('/cart');
     };
+
+    const featuredItems = menuItems.slice(0, 6);
 
     return (
         <div className="min-h-screen bg-black text-white">
@@ -208,9 +173,9 @@ export default function HomePage() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {menuItems.map((item, index) => (
+                        {featuredItems.map((item, index) => (
                             <div
-                                key={item.id}
+                                key={item._id}
                                 className="group bg-zinc-900 rounded-lg overflow-hidden shadow-2xl 
                          hover:shadow-amber-500/20 transition-all duration-500
                          hover:-translate-y-2"
