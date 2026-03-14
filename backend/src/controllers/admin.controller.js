@@ -1,5 +1,7 @@
 import MenuItem from '../models/menuItem.js';
 import Reservation from '../models/reservationModel.js';
+import Order from '../models/orderModel.js';
+import User from '../models/User.js';
 import asyncHandler from 'express-async-handler';
 
 // get all menu items (admin)
@@ -10,13 +12,13 @@ export const getMenuItems = asyncHandler(async (req, res) => {
 
 // create new menu item
 export const createMenuItem = asyncHandler(async (req, res) => {
-    const { name, description, price, emoji, category } = req.body;
+    const { name, description, price, image, category } = req.body;
 
     const menuItem = new MenuItem({
         name,
         description,
         price,
-        emoji,
+        image,
         category,
     });
 
@@ -32,7 +34,7 @@ export const updateMenuItem = asyncHandler(async (req, res) => {
         menuItem.name = req.body.name || menuItem.name;
         menuItem.description = req.body.description || menuItem.description;
         menuItem.price = req.body.price || menuItem.price;
-        menuItem.emoji = req.body.emoji || menuItem.emoji;
+        menuItem.image = req.body.image || menuItem.image;
         menuItem.category = req.body.category || menuItem.category;
 
         const updatedItem = await menuItem.save();
@@ -48,7 +50,7 @@ export const deleteMenuItem = asyncHandler(async (req, res) => {
     const menuItem = await MenuItem.findById(req.params.id);
 
     if (menuItem) {
-        await menuItem.remove();
+        await menuItem.deleteOne();
         res.json({ message: 'Menu item removed' });
     } else {
         res.status(404);

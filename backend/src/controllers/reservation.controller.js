@@ -3,14 +3,15 @@ import asyncHandler from 'express-async-handler';
 
 // create a reservation
 export const createReservation = asyncHandler(async (req, res) => {
-    const { guests, date, time, specialRequests } = req.body;
+    const { guests, date, time, specialRequests, specialRequest } = req.body;
+    const normalizedSpecialRequests = specialRequests ?? specialRequest ?? '';
 
     const reservation = await Reservation.create({
         user: req.user._id,
         guests,
         date,
         time,
-        specialRequests,
+        specialRequests: normalizedSpecialRequests,
     });
 
     res.status(201).json(reservation);
