@@ -18,10 +18,14 @@ export default function Login() {
         try {
             const res = await API.post('/auth/login', formData);
 
-            console.log(res.data);
             localStorage.setItem('token', res.data.token);
-            alert('Login successful!');
-            navigate('/');
+            localStorage.setItem('user', JSON.stringify(res.data.user));
+            const role = res.data?.user?.role;
+            if (role === 'admin') {
+                navigate('/admin');
+            } else {
+                navigate('/');
+            }
         } catch (err) {
             console.error(err.response?.data || err.message);
             setError(err.response?.data?.message || 'Something went wrong');
