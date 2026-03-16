@@ -1,8 +1,15 @@
 import { useState, useEffect } from 'react';
+import API from '../../api/axios';
+import { useNavigate } from 'react-router-dom';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 
 export default function CheckoutPage() {
+    const navigate = useNavigate();
+    const [loadingCart, setLoadingCart] = useState(true);
+    const [placingOrder, setPlacingOrder] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
     const [cartItems, setCartItems] = useState([]);
     const [formData, setFormData] = useState({
         fullName: '',
@@ -16,9 +23,26 @@ export default function CheckoutPage() {
         cvv: ''
     });
 
+    const fetchCart = async () => {
+        try {
+            setLoadingCart(true);
+            setErrorMessage('');
+            const { data } = await API.get('/cart');
+            setCartItems(data.items || []);
+        } catch (error) {
+            if (error.response?.status === 401) {
+                navigate('/login');
+                return;
+            }
+            setErrorMessage(error.response?.data?.message || 'Failed to load cart');
+            setCartItems([]);
+        } finally {
+            setLoadingCart(false);
+        }
+    };
+
     useEffect(() => {
-        const savedCart = JSON.parse(localStorage.getItem('cart') || '[]');
-        setCartItems(savedCart);
+        fetchCart();
     }, []);
 
     const handleInputChange = (e) => {
@@ -28,14 +52,34 @@ export default function CheckoutPage() {
         });
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        alert('Order placed successfully!');
-        localStorage.removeItem('cart');
-        window.location.href = '/';
+        setErrorMessage('');
+        setSuccessMessage('');
+
+        if (!cartItems.length) {
+            setErrorMessage('Your cart is empty.');
+            return;
+        }
+
+        try {
+            setPlacingOrder(true);
+            await API.post('/orders');
+            setSuccessMessage('Order placed successfully!');
+            await fetchCart();
+            setTimeout(() => navigate('/profile'), 1200);
+        } catch (error) {
+            if (error.response?.status === 401) {
+                navigate('/login');
+                return;
+            }
+            setErrorMessage(error.response?.data?.message || 'Failed to place order');
+        } finally {
+            setPlacingOrder(false);
+        }
     };
 
-    const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const subtotal = cartItems.reduce((sum, item) => sum + item.menuItem.price * item.qty, 0);
     const tax = subtotal * 0.1;
     const delivery = 10;
     const total = subtotal + tax + delivery;
@@ -56,6 +100,16 @@ export default function CheckoutPage() {
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
                         <div className="lg:col-span-2">
+                            {errorMessage && (
+                                <div className="mb-4 p-3 rounded-md bg-red-500/20 text-red-400 border border-red-500/30">
+                                    {errorMessage}
+                                </div>
+                            )}
+                            {successMessage && (
+                                <div className="mb-4 p-3 rounded-md bg-green-500/20 text-green-400 border border-green-500/30">
+                                    {successMessage}
+                                </div>
+                            )}
                             <form onSubmit={handleSubmit} className="space-y-8">
 
                                 <div className="bg-zinc-900 rounded-lg p-6 border border-amber-400/20">
@@ -212,12 +266,13 @@ export default function CheckoutPage() {
 
                                 <button
                                     type="submit"
+                                    disabled={placingOrder || loadingCart || cartItems.length === 0}
                                     className="w-full bg-gradient-to-r from-amber-400 to-yellow-500 text-black 
                                              py-4 rounded-md font-semibold text-lg uppercase tracking-wider
                                              hover:shadow-lg hover:shadow-amber-500/50 
                                              hover:-translate-y-0.5 transition-all duration-300"
                                 >
-                                    Place Order
+                                    {placingOrder ? 'Processing...' : 'Place Order'}
                                 </button>
                             </form>
                         </div>
@@ -229,20 +284,16 @@ export default function CheckoutPage() {
 
                                 <div className="space-y-3 mb-6 max-h-64 overflow-y-auto">
                                     {cartItems.map((item) => (
-                                        <div key={item.id} className="flex items-center gap-3 pb-3 border-b border-amber-400/10">
+                                        <div key={item.menuItem._id} className="flex items-center gap-3 pb-3 border-b border-amber-400/10">
                                             <div className="w-12 h-12 rounded overflow-hidden flex-shrink-0">
-                                                <img
-                                                    src={item.image}
-                                                    alt={item.name}
-                                                    className="w-full h-full object-cover"
-                                                />
+                                                <img src={item.menuItem.image} alt={item.menuItem.name} className="w-full h-full object-cover" />
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <p className="text-white text-sm truncate">{item.name}</p>
-                                                <p className="text-gray-400 text-xs">Qty: {item.quantity}</p>
+                                                <p className="text-white text-sm truncate">{item.menuItem.name}</p>
+                                                <p className="text-gray-400 text-xs">Qty: {item.qty}</p>
                                             </div>
                                             <span className="text-amber-400 font-semibold text-sm">
-                                                ${(item.price * item.quantity).toFixed(2)}
+                                                ${(item.menuItem.price * item.qty).toFixed(2)}
                                             </span>
                                         </div>
                                     ))}

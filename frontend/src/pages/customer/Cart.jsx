@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import API from '../../api/axios';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import { useNavigate, Link } from 'react-router-dom';
@@ -8,37 +9,60 @@ export default function CartPage() {
     const [cartItems, setCartItems] = useState([]);
 
     useEffect(() => {
-        // Load cart from localStorage
-        const savedCart = JSON.parse(localStorage.getItem('cart') || '[]');
-        setCartItems(savedCart);
+        fetchCart();
     }, []);
 
-    const updateQuantity = (itemId, newQuantity) => {
-        if (newQuantity < 1) {
-            removeItem(itemId);
-            return;
+    const fetchCart = async () => {
+        try {
+            const { data } = await API.get('/cart');
+            setCartItems(data.items || []);
+        } catch (error) {
+            console.error('Error fetching cart:', error);
+            setCartItems([]);
         }
-
-        const updatedCart = cartItems.map(item =>
-            item.id === itemId ? { ...item, quantity: newQuantity } : item
-        );
-        setCartItems(updatedCart);
-        localStorage.setItem('cart', JSON.stringify(updatedCart));
     };
 
-    const removeItem = (itemId) => {
-        const updatedCart = cartItems.filter(item => item.id !== itemId);
-        setCartItems(updatedCart);
-        localStorage.setItem('cart', JSON.stringify(updatedCart));
+    const updateQuantity = async (menuItemId, newQty) => {
+        try {
+            if (newQty < 1) {
+                await removeItem(menuItemId);
+                return;
+            }
+
+            await API.post('/cart', { menuItemId, qty: newQty });
+            fetchCart();
+        } catch (error) {
+            console.error('Error updating quantity:', error);
+            alert(error.response?.data?.message || 'Failed to update quantity');
+        }
     };
 
-    const clearCart = () => {
-        setCartItems([]);
-        localStorage.removeItem('cart');
+    const removeItem = async (menuItemId) => {
+        try {
+            await API.delete(`/cart/${menuItemId}`);
+            fetchCart();
+        } catch (error) {
+            console.error('Error removing item:', error);
+            alert(error.response?.data?.message || 'Failed to remove item');
+        }
     };
 
-    const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const tax = subtotal * 0.1; // 10% tax
+    const clearCart = async () => {
+        try {
+            await Promise.all(
+                cartItems.map((item) => API.delete(`/cart/${item.menuItem._id}`))
+            );
+            fetchCart();
+        } catch (error) {
+            console.error('Error clearing cart:', error);
+            alert(error.response?.data?.message || 'Failed to clear cart');
+        }
+    };
+
+    const subtotal = cartItems.reduce(
+        (sum, item) => sum + item.menuItem.price * item.qty, 0
+    );
+    const tax = subtotal * 0.1;
     const total = subtotal + tax;
 
     return (
@@ -75,7 +99,7 @@ export default function CartPage() {
                             <div className="lg:col-span-2 space-y-4">
                                 {cartItems.map((item) => (
                                     <div
-                                        key={item.id}
+                                        key={item.menuItem._id}
                                         className="bg-zinc-900 rounded-lg p-6 border border-amber-400/20 
                                                  hover:border-amber-400/50 transition-all duration-300"
                                     >
@@ -83,20 +107,20 @@ export default function CartPage() {
 
                                             <div className="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0">
                                                 <img
-                                                    src={item.image}
-                                                    alt={item.name}
+                                                    src={item.menuItem.image}
+                                                    alt={item.menuItem.name}
                                                     className="w-full h-full object-cover"
                                                 />
                                             </div>
 
                                             <div className="flex-1">
-                                                <h3 className="text-xl font-serif text-white mb-1">{item.name}</h3>
-                                                <p className="text-gray-400 text-sm mb-3">{item.description}</p>
+                                                <h3 className="text-xl font-serif text-white mb-1">{item.menuItem.name}</h3>
+                                                <p className="text-gray-400 text-sm mb-3">{item.menuItem.description}</p>
                                                 <div className="flex items-center gap-4">
 
                                                     <div className="flex items-center gap-2">
                                                         <button
-                                                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                                            onClick={() => updateQuantity(item.menuItem._id, item.qty - 1)}
                                                             className="w-8 h-8 bg-black border border-amber-400/30 rounded 
                                                                      text-amber-400 hover:bg-amber-400 hover:text-black 
                                                                      transition-all duration-300"
@@ -104,10 +128,10 @@ export default function CartPage() {
                                                             -
                                                         </button>
                                                         <span className="text-white font-semibold w-8 text-center">
-                                                            {item.quantity}
+                                                            {item.qty}
                                                         </span>
                                                         <button
-                                                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                                            onClick={() => updateQuantity(item.menuItem._id, item.qty + 1)}
                                                             className="w-8 h-8 bg-black border border-amber-400/30 rounded 
                                                                      text-amber-400 hover:bg-amber-400 hover:text-black 
                                                                      transition-all duration-300"
@@ -117,11 +141,11 @@ export default function CartPage() {
                                                     </div>
 
                                                     <span className="text-2xl font-bold text-amber-400">
-                                                        ${item.price * item.quantity}
+                                                        ${item.menuItem.price * item.qty}
                                                     </span>
 
                                                     <button
-                                                        onClick={() => removeItem(item.id)}
+                                                        onClick={() => removeItem(item.menuItem._id)}
                                                         className="ml-auto text-gray-400 hover:text-red-500 
                                                                  transition-colors duration-300"
                                                     >
