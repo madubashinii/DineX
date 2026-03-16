@@ -1,57 +1,80 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import API from '../../api/axios';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 
+
 export default function ProfilePage() {
+    const navigate = useNavigate();
     const [isEditing, setIsEditing] = useState(false);
+
     const [userInfo, setUserInfo] = useState({
-        name: 'John Doe',
-        email: 'john.doe@example.com',
-        phone: '+1 (555) 123-4567'
+        name: '',
+        email: '',
+        phone: '',
     });
 
-    const [editForm, setEditForm] = useState({ ...userInfo });
+    const [editForm, setEditForm] = useState({
+        name: '',
+        email: '',
+        phone: '',
+    });
 
-    const upcomingReservations = [
-        {
-            id: 1,
-            date: 'Feb 15, 2026',
-            time: '7:00 PM',
-            tableSize: 4,
-            status: 'Confirmed'
-        },
-        {
-            id: 2,
-            date: 'Feb 22, 2026',
-            time: '8:30 PM',
-            tableSize: 2,
-            status: 'Confirmed'
-        }
-    ];
+    const [reservations, setReservations] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [errorMessage, setErrorMessage] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
+    const formatDate = (date) => new Date(date).toLocaleDateString();
 
-    const pastReservations = [
-        {
-            id: 3,
-            date: 'Jan 28, 2026',
-            time: '6:30 PM',
-            tableSize: 6,
-            status: 'Completed'
-        },
-        {
-            id: 4,
-            date: 'Jan 15, 2026',
-            time: '7:00 PM',
-            tableSize: 2,
-            status: 'Completed'
-        },
-        {
-            id: 5,
-            date: 'Dec 31, 2025',
-            time: '9:00 PM',
-            tableSize: 4,
-            status: 'Completed'
+    const now = new Date();
+    const upcomingReservations = reservations.filter((r) => {
+        const dateOnly = new Date(r.date);
+        return dateOnly >= new Date(now.toDateString()) && r.status !== 'Cancelled';
+    });
+    const pastReservations = reservations.filter((r) => {
+        const dateOnly = new Date(r.date);
+        return dateOnly < new Date(now.toDateString()) || r.status === 'Cancelled';
+    });
+
+    const fetchProfileData = async () => {
+        try {
+            setLoading(true);
+            setErrorMessage('');
+
+            const [profileRes, reservationsRes] = await Promise.all([
+                API.get('/users/profile'),
+                API.get('/reservations'),
+            ]);
+
+            const user = profileRes.data;
+            setUserInfo({
+                name: user.name || '',
+                email: user.email || '',
+                phone: user.phone || '',
+            });
+
+            setEditForm({
+                name: user.name || '',
+                email: user.email || '',
+                phone: user.phone || '',
+            });
+
+            setReservations(reservationsRes.data || []);
+        } catch (error) {
+            if (error.response?.status === 401) {
+                navigate('/login');
+                return;
+            }
+            setErrorMessage(error.response?.data?.message || 'Failed to load profile data');
+        } finally {
+            setLoading(false);
         }
-    ];
+    };
+
+    useEffect(() => {
+        fetchProfileData();
+    }, []);
 
     const handleEditToggle = () => {
         if (isEditing) {
@@ -75,13 +98,25 @@ export default function ProfilePage() {
 
     const handleLogout = () => {
         if (confirm('Are you sure you want to logout?')) {
-            window.location.href = '/';
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            navigate('/login');
         }
     };
 
-    const handleCancelReservation = (id) => {
-        if (confirm('Are you sure you want to cancel this reservation?')) {
-            alert('Reservation cancelled');
+    const handleCancelReservation = async (id) => {
+        if (!confirm('Are you sure you want to cancel this reservation?')) return;
+
+        try {
+            await API.delete(`/reservations/${id}`);
+            setSuccessMessage('Reservation cancelled successfully');
+            fetchProfileData();
+        } catch (error) {
+            if (error.response?.status === 401) {
+                navigate('/login');
+                return;
+            }
+            setErrorMessage(error.response?.data?.message || 'Failed to cancel reservation');
         }
     };
 
@@ -96,6 +131,17 @@ export default function ProfilePage() {
                 </div>
             </section>
 
+            {loading && <p className="text-gray-400 mb-4">Loading profile...</p>}
+            {errorMessage && (
+                <div className="mb-4 p-3 rounded-md bg-red-500/20 text-red-400 border border-red-500/30">
+                    {errorMessage}
+                </div>
+            )}
+            {successMessage && (
+                <div className="mb-4 p-3 rounded-md bg-green-500/20 text-green-400 border border-green-500/30">
+                    {successMessage}
+                </div>
+            )}
             <section className="py-16 px-6 bg-black">
                 <div className="max-w-5xl mx-auto">
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -215,11 +261,11 @@ export default function ProfilePage() {
                                 {upcomingReservations.length > 0 ? (
                                     <div className="space-y-4">
                                         {upcomingReservations.map((reservation) => (
-                                            <div key={reservation.id}
+                                            <div key={reservation._id}
                                                 className="bg-black/50 rounded-lg p-4 border border-amber-400/20">
                                                 <div className="flex justify-between items-start mb-3">
                                                     <div>
-                                                        <p className="text-white font-semibold text-lg">{reservation.date}</p>
+                                                        <p className="text-white font-semibold text-lg">{formatDate(reservation.date)}</p>
                                                         <p className="text-gray-400 text-sm">{reservation.time}</p>
                                                     </div>
                                                     <span className="px-3 py-1 bg-amber-400/20 rounded-full text-xs text-amber-400 
@@ -233,10 +279,10 @@ export default function ProfilePage() {
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                                                                 d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                                                         </svg>
-                                                        <span className="text-sm">Table for {reservation.tableSize}</span>
+                                                        <span className="text-sm">Table for {reservation.guests}</span>
                                                     </div>
                                                     <button
-                                                        onClick={() => handleCancelReservation(reservation.id)}
+                                                        onClick={() => handleCancelReservation(reservation._id)}
                                                         className="text-sm text-gray-400 hover:text-red-500 transition-colors"
                                                     >
                                                         Cancel
@@ -263,11 +309,11 @@ export default function ProfilePage() {
                                 {pastReservations.length > 0 ? (
                                     <div className="space-y-3">
                                         {pastReservations.map((reservation) => (
-                                            <div key={reservation.id}
+                                            <div key={reservation._id}
                                                 className="bg-black/30 rounded-lg p-4 border border-amber-400/10">
                                                 <div className="flex justify-between items-center">
                                                     <div>
-                                                        <p className="text-white font-semibold">{reservation.date}</p>
+                                                        <p className="text-white font-semibold">{formatDate(reservation.date)}</p>
                                                         <p className="text-gray-500 text-sm">{reservation.time}</p>
                                                     </div>
                                                     <div className="text-right">
@@ -276,7 +322,7 @@ export default function ProfilePage() {
                                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                                                                     d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                                                             </svg>
-                                                            <span>Table for {reservation.tableSize}</span>
+                                                            <span>Table for {reservation.guests}</span>
                                                         </div>
                                                         <span className="text-xs text-gray-600">{reservation.status}</span>
                                                     </div>
