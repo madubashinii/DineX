@@ -27,18 +27,24 @@ export default function MenuPage() {
         ? menuItems
         : menuItems.filter(item => item.category.toLowerCase() === activeCategory);
 
-    const handleAddToCart = (item) => {
-        const existingCart = JSON.parse(localStorage.getItem('cart') || '[]');
-        const existingItemIndex = existingCart.findIndex(cartItem => cartItem._id === item._id);
+    const handleAddToCart = async (item) => {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                navigate('/login');
+                return;
+            }
 
-        if (existingItemIndex > -1) {
-            existingCart[existingItemIndex].quantity += 1;
-        } else {
-            existingCart.push({ ...item, quantity: 1 });
+            await API.post('/cart', {
+                menuItemId: item._id,
+                qty: 1,
+            });
+
+            navigate('/cart');
+        } catch (error) {
+            console.error('Error adding to cart:', error);
+            alert(error.response?.data?.message || 'Failed to add item to cart');
         }
-
-        localStorage.setItem('cart', JSON.stringify(existingCart));
-        navigate('/cart');
     };
 
     return (

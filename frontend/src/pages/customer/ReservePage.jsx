@@ -1,5 +1,5 @@
 import { useState } from "react";
-import axios from "axios";
+import API from '../../api/axios';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 
@@ -8,7 +8,7 @@ export default function ReservePage() {
         date: "",
         time: "",
         guests: "",
-        specialRequest: ""
+        specialRequests: ""
     });
 
     const [loading, setLoading] = useState(false);
@@ -27,25 +27,14 @@ export default function ReservePage() {
         try {
             setLoading(true);
             setMessage("");
+            const { data } = await API.post('/reservations', formData);
 
-            const token = localStorage.getItem("token");
-
-            const { data } = await axios.post(
-                "http://localhost:5000/api/reservations",
-                formData,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
-
-            setMessage("Reservation successful 🎉");
+            setMessage("Reservation successful");
             setFormData({
                 date: "",
                 time: "",
                 guests: "",
-                specialRequest: ""
+                specialRequests: ""
             });
 
         } catch (error) {
@@ -129,7 +118,7 @@ export default function ReservePage() {
                                 <textarea
                                     name="specialRequest"
                                     placeholder="Any dietary restrictions, allergies, or special occasions?"
-                                    value={formData.specialRequest}
+                                    value={formData.specialRequests}
                                     onChange={handleChange}
                                     rows="4"
                                     className="w-full px-4 py-3 bg-black border border-amber-400/30 rounded-md 
