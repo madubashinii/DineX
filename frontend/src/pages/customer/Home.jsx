@@ -69,25 +69,24 @@ export default function HomePage() {
         },
     ];
 
-    const handleAddToCart = (item) => {
-        const savedCart = JSON.parse(localStorage.getItem('cart') || '[]');
+    const handleAddToCart = async (item) => {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                navigate('/login');
+                return;
+            }
 
-        const existingItem = savedCart.find((cartItem) => cartItem._id === item._id);
+            await API.post('/cart', {
+                menuItemId: item._id,
+                qty: 1,
+            });
 
-        let updatedCart;
-
-        if (existingItem) {
-            updatedCart = savedCart.map((cartItem) =>
-                cartItem._id === item._id
-                    ? { ...cartItem, quantity: cartItem.quantity + 1 }
-                    : cartItem
-            );
-        } else {
-            updatedCart = [...savedCart, { ...item, quantity: 1 }];
+            navigate('/cart');
+        } catch (error) {
+            console.error('Error adding to cart:', error);
+            alert(error.response?.data?.message || 'Failed to add item to cart');
         }
-
-        localStorage.setItem('cart', JSON.stringify(updatedCart));
-        navigate('/cart');
     };
 
     const featuredItems = menuItems.slice(0, 6);
