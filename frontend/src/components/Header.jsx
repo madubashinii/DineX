@@ -6,7 +6,7 @@ export default function Header() {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const navigate = useNavigate();
     const location = useLocation();
-    const isLoggedIn = false;
+    const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'));
     const [isProfileOpen, setIsProfileOpen] = useState(false);
 
     useEffect(() => {
@@ -16,6 +16,12 @@ export default function Header() {
 
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    useEffect(() => {
+        const onStorage = () => setIsLoggedIn(!!localStorage.getItem('token'));
+        window.addEventListener('storage', onStorage);
+        return () => window.removeEventListener('storage', onStorage);
     }, []);
 
     const handleNavClick = (sectionId) => {
@@ -103,7 +109,8 @@ export default function Header() {
                                         </button>
                                         <button
                                             onClick={() => {
-                                                // logout logic 
+                                                localStorage.removeItem('token');
+                                                localStorage.removeItem('user');
                                                 setIsProfileOpen(false);
                                                 navigate('/');
                                             }}

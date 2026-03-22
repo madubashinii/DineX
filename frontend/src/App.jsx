@@ -23,47 +23,53 @@ function App() {
         <Route
           path="/cart"
           element={
-            // <ProtectedRoute>
-            <Cart />
-            // </ProtectedRoute>
+            <ProtectedRoute>
+              <Cart />
+            </ProtectedRoute>
           }
         />
         <Route
           path="/menu"
           element={
-            // <ProtectedRoute>
-            <MenuPage />
-            // </ProtectedRoute>
+            <ProtectedRoute>
+              <MenuPage />
+            </ProtectedRoute>
           }
         />
         <Route
           path="/checkout"
           element={
-            // <ProtectedRoute>
-            <Checkout />
-            // </ProtectedRoute>
+            <ProtectedRoute>
+              <Checkout />
+            </ProtectedRoute>
           }
         />
 
         <Route
           path="/profile"
           element={
-            // <ProtectedRoute>
-            <Profile />
-            // </ProtectedRoute>
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
           }
         />
 
-        <Route path="/reserve" element={<ReservePage />} />
+        <Route
+          path="/reserve"
+          element={
+            <ProtectedRoute>
+              <ReservePage />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Protected Admin Routes */}
         <Route
           path="/admin"
           element={
-            <AdminDashboard />
-            // <ProtectedRoute role="admin">
-            //   <AdminDashboard />
-            // </ProtectedRoute>
+            <ProtectedRoute role="admin">
+              <AdminDashboard />
+            </ProtectedRoute>
           }
         />
       </Routes>
