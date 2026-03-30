@@ -1,5 +1,4 @@
 import Cart from '../models/cartModel.js';
-import MenuItem from '../models/menuItem.js';
 import asyncHandler from 'express-async-handler';
 
 // add/update item in cart
@@ -39,4 +38,18 @@ export const removeFromCart = asyncHandler(async (req, res) => {
     cart.items = cart.items.filter(item => item.menuItem.toString() !== req.params.menuItemId);
     await cart.save();
     res.status(200).json(cart);
+});
+
+// clear all items from cart
+export const clearCart = asyncHandler(async (req, res) => {
+    let cart = await Cart.findOne({ user: req.user._id });
+
+    if (!cart) {
+        cart = new Cart({ user: req.user._id, items: [] });
+    } else {
+        cart.items = [];
+    }
+
+    await cart.save();
+    res.status(200).json({ message: 'Cart cleared', items: [] });
 });

@@ -49,9 +49,7 @@ export default function CartPage() {
 
     const clearCart = async () => {
         try {
-            await Promise.all(
-                cartItems.map((item) => API.delete(`/cart/${item.menuItem._id}`))
-            );
+            await API.delete('/cart/clear');
             fetchCart();
         } catch (error) {
             console.error('Error clearing cart:', error);
