@@ -7,6 +7,8 @@ const reservationSchema = mongoose.Schema(
             ref: 'User',
             required: true,
         },
+        name: { type: String, required: true },
+        phone: { type: String, required: true },
         guests: { type: Number, required: true },
         date: { type: Date, required: true },
         time: { type: String, required: true },
