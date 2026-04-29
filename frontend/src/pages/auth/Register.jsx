@@ -31,6 +31,7 @@ export default function Register() {
             const res = await API.post('/auth/register', {
                 name: formData.name,
                 email: formData.email,
+                phone: formData.phone,
                 password: formData.password
             });
 

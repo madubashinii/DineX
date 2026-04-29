@@ -4,6 +4,17 @@ import API from '../../api/axios';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 
+// Validation helpers
+const validateName = (name) => {
+    return name && name.trim().length >= 2 && name.trim().length <= 100;
+};
+
+const validatePhone = (phone) => {
+    if (!phone || phone.trim() === '') return true; // Phone is optional
+    const phoneRegex = /^[\d\s()+-]+$/;
+    const digitsOnly = phone.replace(/\D/g, '');
+    return phoneRegex.test(phone) && digitsOnly.length >= 7;
+};
 
 export default function ProfilePage() {
     const navigate = useNavigate();
@@ -13,18 +24,33 @@ export default function ProfilePage() {
         name: '',
         email: '',
         phone: '',
+        address: '',
+        city: '',
+        zipCode: '',
     });
 
     const [editForm, setEditForm] = useState({
         name: '',
         email: '',
         phone: '',
+        address: '',
+        city: '',
+        zipCode: '',
     });
 
     const [reservations, setReservations] = useState([]);
+    const [editingReservationId, setEditingReservationId] = useState(null);
+    const [editReservationForm, setEditReservationForm] = useState({
+        date: '',
+        time: '',
+        guests: 1,
+        specialRequests: ''
+    });
+    const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [errorMessage, setErrorMessage] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
+    const [fieldErrors, setFieldErrors] = useState({});
     const formatDate = (date) => new Date(date).toLocaleDateString();
 
     const now = new Date();
@@ -42,9 +68,10 @@ export default function ProfilePage() {
             setLoading(true);
             setErrorMessage('');
 
-            const [profileRes, reservationsRes] = await Promise.all([
+            const [profileRes, reservationsRes, ordersRes] = await Promise.all([
                 API.get('/users/profile'),
                 API.get('/reservations'),
+                API.get('/orders'),
             ]);
 
             const user = profileRes.data;
@@ -52,15 +79,22 @@ export default function ProfilePage() {
                 name: user.name || '',
                 email: user.email || '',
                 phone: user.phone || '',
+                address: user.address || '',
+                city: user.city || '',
+                zipCode: user.zipCode || '',
             });
 
             setEditForm({
                 name: user.name || '',
                 email: user.email || '',
                 phone: user.phone || '',
+                address: user.address || '',
+                city: user.city || '',
+                zipCode: user.zipCode || '',
             });
 
             setReservations(reservationsRes.data || []);
+            setOrders(Array.isArray(ordersRes.data) ? ordersRes.data : []);
         } catch (error) {
             if (error.response?.status === 401) {
                 navigate('/login');
@@ -83,10 +117,50 @@ export default function ProfilePage() {
         setIsEditing(!isEditing);
     };
 
-    const handleSave = (e) => {
+    const handleSave = async (e) => {
         e.preventDefault();
-        setUserInfo({ ...editForm });
-        setIsEditing(false);
+        setErrorMessage('');
+        setSuccessMessage('');
+        setFieldErrors({});
+
+        // Client-side validation
+        const errors = {};
+
+        if (!validateName(editForm.name)) {
+            errors.name = 'Name must be between 2 and 100 characters';
+        }
+
+        if (!validatePhone(editForm.phone)) {
+            errors.phone = 'Invalid phone number. Must contain at least 7 digits';
+        }
+
+        if (Object.keys(errors).length > 0) {
+            setFieldErrors(errors);
+            setErrorMessage('Please fix the errors below');
+            return;
+        }
+
+        try {
+            await API.put('/users/profile', {
+                name: editForm.name,
+                phone: editForm.phone,
+                address: editForm.address,
+                city: editForm.city,
+                zipCode: editForm.zipCode,
+            });
+
+            setUserInfo({ ...editForm });
+            setIsEditing(false);
+            setSuccessMessage('Profile updated successfully');
+
+            setTimeout(() => setSuccessMessage(''), 3000);
+        } catch (error) {
+            if (error.response?.status === 401) {
+                navigate('/login');
+                return;
+            }
+            setErrorMessage(error.response?.data?.message || 'Failed to update profile');
+        }
     };
 
     const handleInputChange = (e) => {
@@ -118,6 +192,58 @@ export default function ProfilePage() {
             }
             setErrorMessage(error.response?.data?.message || 'Failed to cancel reservation');
         }
+    };
+
+    const startEditReservation = (reservation) => {
+        setEditingReservationId(reservation._id);
+        setEditReservationForm({
+            date: new Date(reservation.date).toISOString().slice(0, 10),
+            time: reservation.time || '',
+            guests: reservation.guests || 1,
+            specialRequests: reservation.specialRequests || ''
+        });
+    };
+
+    const handleReservationChange = (e) => {
+        const { name, value } = e.target;
+        setEditReservationForm(prev => ({ ...prev, [name]: name === 'guests' ? Number(value) : value }));
+    };
+
+    const saveReservationEdit = async (id) => {
+        // basic validation
+        if (!editReservationForm.date) {
+            setErrorMessage('Date is required');
+            return;
+        }
+        if (!editReservationForm.time) {
+            setErrorMessage('Time is required');
+            return;
+        }
+        if (!editReservationForm.guests || editReservationForm.guests < 1) {
+            setErrorMessage('Guests must be at least 1');
+            return;
+        }
+
+        try {
+            setErrorMessage('');
+            await API.put(`/reservations/${id}`, {
+                date: editReservationForm.date,
+                time: editReservationForm.time,
+                guests: editReservationForm.guests,
+                specialRequests: editReservationForm.specialRequests
+            });
+            setSuccessMessage('Reservation updated');
+            setEditingReservationId(null);
+            fetchProfileData();
+        } catch (error) {
+            setErrorMessage(error.response?.data?.message || 'Failed to update reservation');
+        }
+    };
+
+    const cancelEditReservation = () => {
+        setEditingReservationId(null);
+        setEditReservationForm({ date: '', time: '', guests: 1, specialRequests: '' });
+        setErrorMessage('');
     };
 
     return (
@@ -195,10 +321,13 @@ export default function ProfilePage() {
                                                 value={editForm.name}
                                                 onChange={handleInputChange}
                                                 required
-                                                className="w-full px-4 py-3 bg-black/50 border border-amber-400/30 rounded-md 
-                                                         text-white placeholder-gray-500 focus:outline-none focus:border-amber-400 
-                                                         transition-colors duration-300"
+                                                className={`w-full px-4 py-3 bg-black/50 border rounded-md 
+                                                         text-white placeholder-gray-500 focus:outline-none 
+                                                         transition-colors duration-300 ${fieldErrors.name ? 'border-red-500/50 focus:border-red-500' : 'border-amber-400/30 focus:border-amber-400'}`}
                                             />
+                                            {fieldErrors.name && (
+                                                <p className="text-red-400 text-sm mt-1">{fieldErrors.name}</p>
+                                            )}
                                         </div>
                                         <div>
                                             <label className="block text-sm text-gray-300 mb-2">Email Address</label>
@@ -208,10 +337,12 @@ export default function ProfilePage() {
                                                 value={editForm.email}
                                                 onChange={handleInputChange}
                                                 required
-                                                className="w-full px-4 py-3 bg-black/50 border border-amber-400/30 rounded-md 
-                                                         text-white placeholder-gray-500 focus:outline-none focus:border-amber-400 
-                                                         transition-colors duration-300"
+                                                disabled
+                                                className="w-full px-4 py-3 bg-black/50 border border-gray-600 rounded-md 
+                                                         text-gray-500 placeholder-gray-600 focus:outline-none 
+                                                         transition-colors duration-300 cursor-not-allowed"
                                             />
+                                            <p className="text-gray-500 text-xs mt-1">Email cannot be changed</p>
                                         </div>
                                         <div>
                                             <label className="block text-sm text-gray-300 mb-2">Phone Number</label>
@@ -220,11 +351,55 @@ export default function ProfilePage() {
                                                 name="phone"
                                                 value={editForm.phone}
                                                 onChange={handleInputChange}
-                                                required
+                                                className={`w-full px-4 py-3 bg-black/50 border rounded-md 
+                                                         text-white placeholder-gray-500 focus:outline-none 
+                                                         transition-colors duration-300 ${fieldErrors.phone ? 'border-red-500/50 focus:border-red-500' : 'border-amber-400/30 focus:border-amber-400'}`}
+                                                placeholder="+1 (555) 000-0000"
+                                            />
+                                            {fieldErrors.phone && (
+                                                <p className="text-red-400 text-sm mt-1">{fieldErrors.phone}</p>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm text-gray-300 mb-2">Address</label>
+                                            <input
+                                                type="text"
+                                                name="address"
+                                                value={editForm.address}
+                                                onChange={handleInputChange}
                                                 className="w-full px-4 py-3 bg-black/50 border border-amber-400/30 rounded-md 
                                                          text-white placeholder-gray-500 focus:outline-none focus:border-amber-400 
                                                          transition-colors duration-300"
+                                                placeholder="123 Main Street"
                                             />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm text-gray-300 mb-2">City</label>
+                                                <input
+                                                    type="text"
+                                                    name="city"
+                                                    value={editForm.city}
+                                                    onChange={handleInputChange}
+                                                    className="w-full px-4 py-3 bg-black/50 border border-amber-400/30 rounded-md 
+                                                             text-white placeholder-gray-500 focus:outline-none focus:border-amber-400 
+                                                             transition-colors duration-300"
+                                                    placeholder="New York"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm text-gray-300 mb-2">ZIP Code</label>
+                                                <input
+                                                    type="text"
+                                                    name="zipCode"
+                                                    value={editForm.zipCode}
+                                                    onChange={handleInputChange}
+                                                    className="w-full px-4 py-3 bg-black/50 border border-amber-400/30 rounded-md 
+                                                             text-white placeholder-gray-500 focus:outline-none focus:border-amber-400 
+                                                             transition-colors duration-300"
+                                                    placeholder="10001"
+                                                />
+                                            </div>
                                         </div>
                                         <button
                                             type="submit"
@@ -248,7 +423,19 @@ export default function ProfilePage() {
                                         </div>
                                         <div className="flex justify-between py-3 border-b border-amber-400/10">
                                             <span className="text-gray-400">Phone</span>
-                                            <span className="text-white">{userInfo.phone}</span>
+                                            <span className="text-white">{userInfo.phone || '-'}</span>
+                                        </div>
+                                        <div className="flex justify-between py-3 border-b border-amber-400/10">
+                                            <span className="text-gray-400">Address</span>
+                                            <span className="text-white">{userInfo.address || '-'}</span>
+                                        </div>
+                                        <div className="flex justify-between py-3 border-b border-amber-400/10">
+                                            <span className="text-gray-400">City</span>
+                                            <span className="text-white">{userInfo.city || '-'}</span>
+                                        </div>
+                                        <div className="flex justify-between py-3 border-b border-amber-400/10">
+                                            <span className="text-gray-400">ZIP Code</span>
+                                            <span className="text-white">{userInfo.zipCode || '-'}</span>
                                         </div>
                                     </div>
                                 )}
@@ -261,33 +448,69 @@ export default function ProfilePage() {
                                 {upcomingReservations.length > 0 ? (
                                     <div className="space-y-4">
                                         {upcomingReservations.map((reservation) => (
-                                            <div key={reservation._id}
+                                            <div key={reservation._1}
                                                 className="bg-black/50 rounded-lg p-4 border border-amber-400/20">
-                                                <div className="flex justify-between items-start mb-3">
-                                                    <div>
-                                                        <p className="text-white font-semibold text-lg">{formatDate(reservation.date)}</p>
-                                                        <p className="text-gray-400 text-sm">{reservation.time}</p>
+                                                {editingReservationId === reservation._id ? (
+                                                    <div className="space-y-3">
+                                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                                            <div>
+                                                                <label className="text-sm text-gray-300">Date</label>
+                                                                <input type="date" name="date" value={editReservationForm.date} onChange={handleReservationChange}
+                                                                    className="w-full px-3 py-2 bg-black border border-amber-400/30 rounded text-white" />
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-sm text-gray-300">Time</label>
+                                                                <input type="time" name="time" value={editReservationForm.time} onChange={handleReservationChange}
+                                                                    className="w-full px-3 py-2 bg-black border border-amber-400/30 rounded text-white" />
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-sm text-gray-300">Guests</label>
+                                                                <input type="number" name="guests" min="1" value={editReservationForm.guests} onChange={handleReservationChange}
+                                                                    className="w-full px-3 py-2 bg-black border border-amber-400/30 rounded text-white" />
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-sm text-gray-300">Special Requests</label>
+                                                            <input type="text" name="specialRequests" value={editReservationForm.specialRequests} onChange={handleReservationChange}
+                                                                className="w-full px-3 py-2 bg-black border border-amber-400/30 rounded text-white" />
+                                                        </div>
+                                                        <div className="flex gap-2">
+                                                            <button onClick={() => saveReservationEdit(reservation._id)} className="px-4 py-2 bg-amber-400 text-black rounded">Save</button>
+                                                            <button onClick={cancelEditReservation} className="px-4 py-2 bg-zinc-800 text-gray-300 rounded">Cancel</button>
+                                                        </div>
                                                     </div>
-                                                    <span className="px-3 py-1 bg-amber-400/20 rounded-full text-xs text-amber-400 
+                                                ) : (
+                                                    <>
+                                                        <div className="flex justify-between items-start mb-3">
+                                                            <div>
+                                                                <p className="text-white font-semibold text-lg">{formatDate(reservation.date)}</p>
+                                                                <p className="text-gray-400 text-sm">{reservation.time}</p>
+                                                            </div>
+                                                            <span className="px-3 py-1 bg-amber-400/20 rounded-full text-xs text-amber-400 
                                                                    border border-amber-400/30">
-                                                        {reservation.status}
-                                                    </span>
-                                                </div>
-                                                <div className="flex justify-between items-center">
-                                                    <div className="flex items-center gap-2 text-gray-400">
-                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                                                        </svg>
-                                                        <span className="text-sm">Table for {reservation.guests}</span>
-                                                    </div>
-                                                    <button
-                                                        onClick={() => handleCancelReservation(reservation._id)}
-                                                        className="text-sm text-gray-400 hover:text-red-500 transition-colors"
-                                                    >
-                                                        Cancel
-                                                    </button>
-                                                </div>
+                                                                {reservation.status}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex justify-between items-center">
+                                                            <div className="flex items-center gap-2 text-gray-400">
+                                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                                                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                                                </svg>
+                                                                <span className="text-sm">Table for {reservation.guests}</span>
+                                                            </div>
+                                                            <div className="flex items-center gap-3">
+                                                                <button onClick={() => startEditReservation(reservation)} className="text-sm text-amber-400 hover:text-amber-300">Edit</button>
+                                                                <button
+                                                                    onClick={() => handleCancelReservation(reservation._id)}
+                                                                    className="text-sm text-gray-400 hover:text-red-500 transition-colors"
+                                                                >
+                                                                    Cancel
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </>
+                                                )}
                                             </div>
                                         ))}
                                     </div>
@@ -338,6 +561,62 @@ export default function ProfilePage() {
                             </div>
                         </div>
                     </div>
+                </div>
+            </section>
+
+            {/* Recent Orders Section */}
+            <section className="py-16 px-6 bg-zinc-950 border-t border-amber-400/20">
+                <div className="max-w-5xl mx-auto">
+                    <div className="flex items-center justify-between mb-8">
+                        <h2 className="text-3xl font-serif text-white">Recent Orders</h2>
+                        <button
+                            onClick={() => navigate('/orders')}
+                            className="text-amber-400 hover:text-amber-300 transition-colors text-sm"
+                        >
+                            View All Orders →
+                        </button>
+                    </div>
+
+                    {orders.length > 0 ? (
+                        <div className="space-y-4">
+                            {orders.slice(0, 3).map((order) => (
+                                <div
+                                    key={order._id}
+                                    className="bg-black/50 rounded-lg p-4 border border-amber-400/20 hover:border-amber-400/40 transition-colors"
+                                >
+                                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                                        <div>
+                                            <p className="text-white font-semibold">Order #{order._id.slice(-8).toUpperCase()}</p>
+                                            <p className="text-gray-400 text-sm">{formatDate(order.createdAt)}</p>
+                                        </div>
+                                        <div className="flex items-center gap-4">
+                                            <div>
+                                                <p className="text-gray-400 text-sm">Items: {order.orderItems?.length || 0}</p>
+                                                <p className="text-amber-400 font-semibold">${order.totalPrice?.toFixed(2) || '0.00'}</p>
+                                            </div>
+                                            <span className={`px-3 py-1 rounded-full text-xs font-medium border ${order.status === 'Pending' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' :
+                                                order.status === 'Processing' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' :
+                                                    order.status === 'Completed' ? 'bg-green-500/20 text-green-400 border-green-500/30' :
+                                                        'bg-red-500/20 text-red-400 border-red-500/30'
+                                                }`}>
+                                                {order.status}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-8">
+                            <p className="text-gray-400 mb-4">No orders yet</p>
+                            <button
+                                onClick={() => navigate('/menu')}
+                                className="inline-block text-amber-400 hover:text-amber-300 transition-colors"
+                            >
+                                Browse Menu
+                            </button>
+                        </div>
+                    )}
                 </div>
             </section>
 
