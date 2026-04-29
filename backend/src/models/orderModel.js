@@ -17,6 +17,14 @@ const orderSchema = mongoose.Schema(
             enum: ['Pending', 'Processing', 'Completed', 'Cancelled'],
             default: 'Pending',
         },
+        deliveryAddress: {
+            fullName: String,
+            email: String,
+            phone: String,
+            address: String,
+            city: String,
+            zipCode: String,
+        },
     },
     { timestamps: true }
 );
