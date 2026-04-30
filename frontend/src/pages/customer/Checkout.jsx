@@ -4,12 +4,38 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 
+// Validation helpers
+const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+};
+
+const validatePhone = (phone) => {
+    const phoneRegex = /^[\d\s()+-]+$/;
+    const digitsOnly = phone.replace(/\D/g, '');
+    return phoneRegex.test(phone) && digitsOnly.length >= 7;
+};
+
+const validateName = (name) => {
+    return name && name.trim().length >= 2 && name.trim().length <= 100;
+};
+
+const validateAddress = (address) => {
+    return address && address.trim().length >= 5 && address.trim().length <= 200;
+};
+
+const validateZipcode = (zipcode) => {
+    const zipcodeRegex = /^[A-Z0-9\s-]{3,10}$/i;
+    return zipcodeRegex.test(zipcode);
+};
+
 export default function CheckoutPage() {
     const navigate = useNavigate();
     const [loadingCart, setLoadingCart] = useState(true);
     const [placingOrder, setPlacingOrder] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
+    const [fieldErrors, setFieldErrors] = useState({});
     const [cartItems, setCartItems] = useState([]);
     const [formData, setFormData] = useState({
         fullName: '',
@@ -56,6 +82,40 @@ export default function CheckoutPage() {
         e.preventDefault();
         setErrorMessage('');
         setSuccessMessage('');
+        setFieldErrors({});
+
+        // Client-side validation
+        const errors = {};
+
+        if (!validateName(formData.fullName)) {
+            errors.fullName = 'Full name must be between 2 and 100 characters';
+        }
+
+        if (!validateEmail(formData.email)) {
+            errors.email = 'Invalid email format (e.g., user@example.com)';
+        }
+
+        if (!validatePhone(formData.phone)) {
+            errors.phone = 'Invalid phone number. Must contain at least 7 digits';
+        }
+
+        if (!validateAddress(formData.address)) {
+            errors.address = 'Address must be between 5 and 200 characters';
+        }
+
+        if (!validateName(formData.city)) {
+            errors.city = 'City must be valid (2-100 characters)';
+        }
+
+        if (!validateZipcode(formData.zipCode)) {
+            errors.zipCode = 'Invalid zip code format';
+        }
+
+        if (Object.keys(errors).length > 0) {
+            setFieldErrors(errors);
+            setErrorMessage('Please fix the errors below');
+            return;
+        }
 
         if (!cartItems.length) {
             setErrorMessage('Your cart is empty.');
@@ -64,10 +124,19 @@ export default function CheckoutPage() {
 
         try {
             setPlacingOrder(true);
-            await API.post('/orders');
+            await API.post('/orders', {
+                deliveryAddress: {
+                    fullName: formData.fullName,
+                    email: formData.email,
+                    phone: formData.phone,
+                    address: formData.address,
+                    city: formData.city,
+                    zipCode: formData.zipCode,
+                }
+            });
             setSuccessMessage('Order placed successfully!');
             await fetchCart();
-            setTimeout(() => navigate('/profile'), 1200);
+            setTimeout(() => navigate('/orders'), 1200);
         } catch (error) {
             if (error.response?.status === 401) {
                 navigate('/login');
@@ -123,11 +192,14 @@ export default function CheckoutPage() {
                                                 required
                                                 value={formData.fullName}
                                                 onChange={handleInputChange}
-                                                className="w-full px-4 py-3 bg-black/50 border border-amber-400/30 rounded-md 
-                                                         text-white placeholder-gray-500 focus:outline-none focus:border-amber-400 
-                                                         transition-colors duration-300"
+                                                className={`w-full px-4 py-3 bg-black/50 border rounded-md 
+                                                         text-white placeholder-gray-500 focus:outline-none 
+                                                         transition-colors duration-300 ${fieldErrors.fullName ? 'border-red-500/50 focus:border-red-500' : 'border-amber-400/30 focus:border-amber-400'}`}
                                                 placeholder="John Doe"
                                             />
+                                            {fieldErrors.fullName && (
+                                                <p className="text-red-400 text-sm mt-1">{fieldErrors.fullName}</p>
+                                            )}
                                         </div>
                                         <div>
                                             <label className="block text-sm text-gray-300 mb-2">Email</label>
@@ -137,11 +209,14 @@ export default function CheckoutPage() {
                                                 required
                                                 value={formData.email}
                                                 onChange={handleInputChange}
-                                                className="w-full px-4 py-3 bg-black/50 border border-amber-400/30 rounded-md 
-                                                         text-white placeholder-gray-500 focus:outline-none focus:border-amber-400 
-                                                         transition-colors duration-300"
+                                                className={`w-full px-4 py-3 bg-black/50 border rounded-md 
+                                                         text-white placeholder-gray-500 focus:outline-none 
+                                                         transition-colors duration-300 ${fieldErrors.email ? 'border-red-500/50 focus:border-red-500' : 'border-amber-400/30 focus:border-amber-400'}`}
                                                 placeholder="john@example.com"
                                             />
+                                            {fieldErrors.email && (
+                                                <p className="text-red-400 text-sm mt-1">{fieldErrors.email}</p>
+                                            )}
                                         </div>
                                         <div className="md:col-span-2">
                                             <label className="block text-sm text-gray-300 mb-2">Phone Number</label>
@@ -151,11 +226,14 @@ export default function CheckoutPage() {
                                                 required
                                                 value={formData.phone}
                                                 onChange={handleInputChange}
-                                                className="w-full px-4 py-3 bg-black/50 border border-amber-400/30 rounded-md 
-                                                         text-white placeholder-gray-500 focus:outline-none focus:border-amber-400 
-                                                         transition-colors duration-300"
+                                                className={`w-full px-4 py-3 bg-black/50 border rounded-md 
+                                                         text-white placeholder-gray-500 focus:outline-none 
+                                                         transition-colors duration-300 ${fieldErrors.phone ? 'border-red-500/50 focus:border-red-500' : 'border-amber-400/30 focus:border-amber-400'}`}
                                                 placeholder="+1 (555) 000-0000"
                                             />
+                                            {fieldErrors.phone && (
+                                                <p className="text-red-400 text-sm mt-1">{fieldErrors.phone}</p>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -171,11 +249,14 @@ export default function CheckoutPage() {
                                                 required
                                                 value={formData.address}
                                                 onChange={handleInputChange}
-                                                className="w-full px-4 py-3 bg-black/50 border border-amber-400/30 rounded-md 
-                                                         text-white placeholder-gray-500 focus:outline-none focus:border-amber-400 
-                                                         transition-colors duration-300"
+                                                className={`w-full px-4 py-3 bg-black/50 border rounded-md 
+                                                         text-white placeholder-gray-500 focus:outline-none 
+                                                         transition-colors duration-300 ${fieldErrors.address ? 'border-red-500/50 focus:border-red-500' : 'border-amber-400/30 focus:border-amber-400'}`}
                                                 placeholder="123 Main Street"
                                             />
+                                            {fieldErrors.address && (
+                                                <p className="text-red-400 text-sm mt-1">{fieldErrors.address}</p>
+                                            )}
                                         </div>
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
@@ -186,11 +267,14 @@ export default function CheckoutPage() {
                                                     required
                                                     value={formData.city}
                                                     onChange={handleInputChange}
-                                                    className="w-full px-4 py-3 bg-black/50 border border-amber-400/30 rounded-md 
-                                                             text-white placeholder-gray-500 focus:outline-none focus:border-amber-400 
-                                                             transition-colors duration-300"
+                                                    className={`w-full px-4 py-3 bg-black/50 border rounded-md 
+                                                             text-white placeholder-gray-500 focus:outline-none 
+                                                             transition-colors duration-300 ${fieldErrors.city ? 'border-red-500/50 focus:border-red-500' : 'border-amber-400/30 focus:border-amber-400'}`}
                                                     placeholder="New York"
                                                 />
+                                                {fieldErrors.city && (
+                                                    <p className="text-red-400 text-sm mt-1">{fieldErrors.city}</p>
+                                                )}
                                             </div>
                                             <div>
                                                 <label className="block text-sm text-gray-300 mb-2">ZIP Code</label>
@@ -200,11 +284,14 @@ export default function CheckoutPage() {
                                                     required
                                                     value={formData.zipCode}
                                                     onChange={handleInputChange}
-                                                    className="w-full px-4 py-3 bg-black/50 border border-amber-400/30 rounded-md 
-                                                             text-white placeholder-gray-500 focus:outline-none focus:border-amber-400 
-                                                             transition-colors duration-300"
+                                                    className={`w-full px-4 py-3 bg-black/50 border rounded-md 
+                                                             text-white placeholder-gray-500 focus:outline-none 
+                                                             transition-colors duration-300 ${fieldErrors.zipCode ? 'border-red-500/50 focus:border-red-500' : 'border-amber-400/30 focus:border-amber-400'}`}
                                                     placeholder="10001"
                                                 />
+                                                {fieldErrors.zipCode && (
+                                                    <p className="text-red-400 text-sm mt-1">{fieldErrors.zipCode}</p>
+                                                )}
                                             </div>
                                         </div>
                                     </div>

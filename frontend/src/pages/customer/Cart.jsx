@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import API from '../../api/axios';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
@@ -7,20 +7,49 @@ import { useNavigate, Link } from 'react-router-dom';
 export default function CartPage() {
     const navigate = useNavigate();
     const [cartItems, setCartItems] = useState([]);
+    const [loading, setLoading] = useState(false);
 
-    useEffect(() => {
-        fetchCart();
+    const CART_CACHE_KEY = 'dinex_cart_cache';
+
+    const saveCartToCache = useCallback((items) => {
+        try {
+            localStorage.setItem(CART_CACHE_KEY, JSON.stringify(items));
+        } catch (err) {
+            console.warn('Failed to cache cart', err);
+        }
     }, []);
 
-    const fetchCart = async () => {
+    const getCartFromCache = useCallback(() => {
+        try {
+            const raw = localStorage.getItem(CART_CACHE_KEY);
+            return raw ? JSON.parse(raw) : [];
+        } catch (err) {
+            console.warn('Failed to read cart cache', err);
+            return [];
+        }
+    }, []);
+
+    const fetchCart = useCallback(async () => {
+        setLoading(true);
         try {
             const { data } = await API.get('/cart');
-            setCartItems(data.items || []);
-        } catch (error) {
-            console.error('Error fetching cart:', error);
-            setCartItems([]);
+            const items = data.items || [];
+            setCartItems(items);
+            saveCartToCache(items);
+        } catch (err) {
+            console.error('Error fetching cart:', err);
+            const cached = getCartFromCache();
+            setCartItems(cached || []);
+        } finally {
+            setLoading(false);
         }
-    };
+    }, [getCartFromCache, saveCartToCache]);
+
+    useEffect(() => {
+        const cached = getCartFromCache();
+        if (cached && cached.length > 0) setCartItems(cached);
+        fetchCart();
+    }, [fetchCart, getCartFromCache]);
 
     const updateQuantity = async (menuItemId, newQty) => {
         try {
@@ -28,38 +57,36 @@ export default function CartPage() {
                 await removeItem(menuItemId);
                 return;
             }
-
             await API.post('/cart', { menuItemId, qty: newQty });
-            fetchCart();
-        } catch (error) {
-            console.error('Error updating quantity:', error);
-            alert(error.response?.data?.message || 'Failed to update quantity');
+            await fetchCart();
+        } catch (err) {
+            console.error('Error updating quantity:', err);
+            alert(err.response?.data?.message || 'Failed to update quantity');
         }
     };
 
     const removeItem = async (menuItemId) => {
         try {
             await API.delete(`/cart/${menuItemId}`);
-            fetchCart();
-        } catch (error) {
-            console.error('Error removing item:', error);
-            alert(error.response?.data?.message || 'Failed to remove item');
+            await fetchCart();
+        } catch (err) {
+            console.error('Error removing item:', err);
+            alert(err.response?.data?.message || 'Failed to remove item');
         }
     };
 
     const clearCart = async () => {
         try {
             await API.delete('/cart/clear');
-            fetchCart();
-        } catch (error) {
-            console.error('Error clearing cart:', error);
-            alert(error.response?.data?.message || 'Failed to clear cart');
+            await fetchCart();
+            saveCartToCache([]);
+        } catch (err) {
+            console.error('Error clearing cart:', err);
+            alert(err.response?.data?.message || 'Failed to clear cart');
         }
     };
 
-    const subtotal = cartItems.reduce(
-        (sum, item) => sum + item.menuItem.price * item.qty, 0
-    );
+    const subtotal = cartItems.reduce((sum, item) => sum + (item.menuItem?.price || 0) * item.qty, 0);
     const tax = subtotal * 0.1;
     const total = subtotal + tax;
 
@@ -76,7 +103,11 @@ export default function CartPage() {
 
             <section className="py-16 px-6 bg-black">
                 <div className="max-w-5xl mx-auto">
-                    {cartItems.length === 0 ? (
+                    {loading ? (
+                        <div className="text-center py-12">
+                            <p className="text-gray-400">Loading cart...</p>
+                        </div>
+                    ) : cartItems.length === 0 ? (
                         <div className="text-center py-16">
                             <div className="text-8xl mb-6">🛒</div>
                             <h2 className="text-3xl font-serif text-white mb-4">Your cart is empty</h2>
@@ -93,7 +124,6 @@ export default function CartPage() {
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
                             <div className="lg:col-span-2 space-y-4">
                                 {cartItems.map((item) => (
                                     <div
@@ -102,7 +132,6 @@ export default function CartPage() {
                                                  hover:border-amber-400/50 transition-all duration-300"
                                     >
                                         <div className="flex items-center gap-6">
-
                                             <div className="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0">
                                                 <img
                                                     src={item.menuItem.image}
@@ -115,7 +144,6 @@ export default function CartPage() {
                                                 <h3 className="text-xl font-serif text-white mb-1">{item.menuItem.name}</h3>
                                                 <p className="text-gray-400 text-sm mb-3">{item.menuItem.description}</p>
                                                 <div className="flex items-center gap-4">
-
                                                     <div className="flex items-center gap-2">
                                                         <button
                                                             onClick={() => updateQuantity(item.menuItem._id, item.qty - 1)}
@@ -139,7 +167,7 @@ export default function CartPage() {
                                                     </div>
 
                                                     <span className="text-2xl font-bold text-amber-400">
-                                                        ${item.menuItem.price * item.qty}
+                                                        ${(item.menuItem.price * item.qty).toFixed(2)}
                                                     </span>
 
                                                     <button

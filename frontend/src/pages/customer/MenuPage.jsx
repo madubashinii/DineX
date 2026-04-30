@@ -10,6 +10,7 @@ export default function MenuPage() {
     const navigate = useNavigate();
     const categories = ['All', 'Appetizers', 'Main Course', 'Desserts', 'Beverages'];
 
+    const [searchTerm, setSearchTerm] = useState('');
     useEffect(() => {
         const fetchMenu = async () => {
             try {
@@ -27,6 +28,10 @@ export default function MenuPage() {
         ? menuItems
         : menuItems.filter(item => item.category.toLowerCase() === activeCategory);
 
+    const searchedItems = filteredItems.filter(item =>
+        item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.description?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
     const handleAddToCart = async (item) => {
         try {
             const token = localStorage.getItem('token');
@@ -39,6 +44,11 @@ export default function MenuPage() {
                 menuItemId: item._id,
                 qty: 1,
             });
+
+            const cartNotification = document.createElement('div');
+            cartNotification.innerHTML = '<div class="fixed top-20 right-6 bg-green-500/20 border border-green-500/50 text-green-400 px-6 py-3 rounded-md">Item added to cart!</div>';
+            document.body.appendChild(cartNotification);
+            setTimeout(() => cartNotification.remove(), 2000);
 
             navigate('/cart');
         } catch (error) {
@@ -60,6 +70,15 @@ export default function MenuPage() {
 
             <section className="py-8 px-6 bg-black border-b border-amber-400/20">
                 <div className="max-w-7xl mx-auto">
+                    <div className="mb-6">
+                        <input
+                            type="text"
+                            placeholder="Search menu items..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full px-4 py-2 bg-black border border-amber-400/30 rounded-md text-white placeholder-gray-500"
+                        />
+                    </div>
                     <div className="flex flex-wrap justify-center gap-4">
                         {categories.map((category) => (
                             <button
@@ -80,51 +99,57 @@ export default function MenuPage() {
             <section className="py-16 px-6 bg-black">
                 <div className="max-w-7xl mx-auto">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {filteredItems.map((item) => (
-                            <div
-                                key={item._id}
-                                className="bg-zinc-900 rounded-lg overflow-hidden border border-amber-400/20 
+                        {searchedItems.length === 0 ? (
+                            <div className="col-span-full text-center py-16">
+                                <p className="text-gray-400 text-lg">No menu items found</p>
+                            </div>
+                        ) : (
+                            searchedItems.map((item) => (
+                                <div
+                                    key={item._id}
+                                    className="bg-zinc-900 rounded-lg overflow-hidden border border-amber-400/20 
                                          hover:border-amber-400/50 transition-all duration-300 
                                          hover:shadow-lg hover:shadow-amber-500/20"
-                            >
+                                >
 
-                                <div className="h-56 w-full overflow-hidden">
-                                    <img
-                                        src={item.image}
-                                        alt={item.name}
-                                        className="w-full h-full object-cover object-center"
-                                        onError={(e) => {
-                                            e.target.style.display = 'none';
-                                            e.target.parentElement.innerHTML = '<div class="w-full h-full flex items-center justify-center bg-zinc-800 text-6xl">🍽️</div>';
-                                        }}
-                                    />
-                                </div>
-
-                                {/* Item Details */}
-                                <div className="p-6">
-                                    <div className="flex justify-between items-start mb-2">
-                                        <h3 className="text-xl font-serif text-white">{item.name}</h3>
-                                        <span className="text-2xl font-bold text-amber-400">${item.price}</span>
+                                    <div className="h-56 w-full overflow-hidden">
+                                        <img
+                                            src={item.image}
+                                            alt={item.name}
+                                            className="w-full h-full object-cover object-center"
+                                            onError={(e) => {
+                                                e.target.style.display = 'none';
+                                                e.target.parentElement.innerHTML = '<div class="w-full h-full flex items-center justify-center bg-zinc-800 text-6xl">🍽️</div>';
+                                            }}
+                                        />
                                     </div>
-                                    <p className="text-gray-400 text-sm mb-4">{item.description}</p>
-                                    <div className="flex items-center justify-between">
-                                        <span className="inline-block px-3 py-1 bg-black/50 rounded-full 
+
+                                    {/* Item Details */}
+                                    <div className="p-6">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <h3 className="text-xl font-serif text-white">{item.name}</h3>
+                                            <span className="text-2xl font-bold text-amber-400">${item.price}</span>
+                                        </div>
+                                        <p className="text-gray-400 text-sm mb-4">{item.description}</p>
+                                        <div className="flex items-center justify-between">
+                                            <span className="inline-block px-3 py-1 bg-black/50 rounded-full 
                                                        text-xs text-amber-400 border border-amber-400/30">
-                                            {item.category}
-                                        </span>
-                                        <button
-                                            onClick={() => handleAddToCart(item)}
-                                            className="bg-gradient-to-r from-amber-400 to-yellow-500 text-black 
+                                                {item.category}
+                                            </span>
+                                            <button
+                                                onClick={() => handleAddToCart(item)}
+                                                className="bg-gradient-to-r from-amber-400 to-yellow-500 text-black 
                                                      px-5 py-2 rounded-md font-semibold text-sm uppercase tracking-wider
                                                      hover:shadow-lg hover:shadow-amber-500/50 
                                                      hover:-translate-y-0.5 transition-all duration-300"
-                                        >
-                                            Add to Cart
-                                        </button>
+                                            >
+                                                Add to Cart
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))
+                        )}
                     </div>
                 </div>
             </section>

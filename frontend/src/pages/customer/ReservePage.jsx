@@ -3,8 +3,21 @@ import API from '../../api/axios';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 
+// Validation helpers
+const validateName = (name) => {
+    return name && name.trim().length >= 2 && name.trim().length <= 100;
+};
+
+const validatePhone = (phone) => {
+    const phoneRegex = /^[\d\s()+-]+$/;
+    const digitsOnly = phone.replace(/\D/g, '');
+    return phoneRegex.test(phone) && digitsOnly.length >= 7;
+};
+
 export default function ReservePage() {
     const [formData, setFormData] = useState({
+        name: "",
+        phone: "",
         date: "",
         time: "",
         guests: "",
@@ -13,6 +26,7 @@ export default function ReservePage() {
 
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState("");
+    const [fieldErrors, setFieldErrors] = useState({});
 
     const handleChange = (e) => {
         setFormData({
@@ -23,19 +37,60 @@ export default function ReservePage() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setFieldErrors({});
+        setMessage("");
+
+        // Client-side validation
+        const errors = {};
+
+        if (!validateName(formData.name)) {
+            errors.name = 'Name must be between 2 and 100 characters';
+        }
+
+        if (!validatePhone(formData.phone)) {
+            errors.phone = 'Invalid phone number. Must contain at least 7 digits';
+        }
+
+        if (!formData.date) {
+            errors.date = 'Date is required';
+        }
+
+        if (!formData.time) {
+            errors.time = 'Time is required';
+        }
+
+        if (!formData.guests || formData.guests < 1) {
+            errors.guests = 'Number of guests must be at least 1';
+        }
+
+        if (Object.keys(errors).length > 0) {
+            setFieldErrors(errors);
+            setMessage('Please fix the errors below');
+            return;
+        }
 
         try {
             setLoading(true);
             setMessage("");
-            const { data } = await API.post('/reservations', formData);
+            const { data } = await API.post('/reservations', {
+                name: formData.name,
+                phone: formData.phone,
+                date: formData.date,
+                time: formData.time,
+                guests: parseInt(formData.guests),
+                specialRequests: formData.specialRequests
+            });
 
-            setMessage("Reservation successful");
+            setMessage("Reservation successful!");
             setFormData({
+                name: "",
+                phone: "",
                 date: "",
                 time: "",
                 guests: "",
                 specialRequests: ""
             });
+            setFieldErrors({});
 
         } catch (error) {
             setMessage(
@@ -71,6 +126,40 @@ export default function ReservePage() {
                         <form onSubmit={handleSubmit} className="space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
+                                    <label className="block text-sm text-gray-300 mb-2">Full Name <span className="text-red-400">*</span></label>
+                                    <input
+                                        type="text"
+                                        name="name"
+                                        value={formData.name}
+                                        onChange={handleChange}
+                                        className={`w-full px-4 py-3 bg-black border rounded-md 
+                                                 text-white focus:outline-none transition-colors duration-300 ${fieldErrors.name ? 'border-red-500/50 focus:border-red-500' : 'border-amber-400/30 focus:border-amber-400'}`}
+                                        placeholder="John Doe"
+                                    />
+                                    {fieldErrors.name && (
+                                        <p className="text-red-400 text-sm mt-1">{fieldErrors.name}</p>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm text-gray-300 mb-2">Phone Number <span className="text-red-400">*</span></label>
+                                    <input
+                                        type="tel"
+                                        name="phone"
+                                        value={formData.phone}
+                                        onChange={handleChange}
+                                        className={`w-full px-4 py-3 bg-black border rounded-md 
+                                                 text-white focus:outline-none transition-colors duration-300 ${fieldErrors.phone ? 'border-red-500/50 focus:border-red-500' : 'border-amber-400/30 focus:border-amber-400'}`}
+                                        placeholder="+1 (555) 000-0000"
+                                    />
+                                    {fieldErrors.phone && (
+                                        <p className="text-red-400 text-sm mt-1">{fieldErrors.phone}</p>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
                                     <label className="block text-sm text-gray-300 mb-2">Date</label>
                                     <input
                                         type="date"
@@ -78,9 +167,12 @@ export default function ReservePage() {
                                         value={formData.date}
                                         onChange={handleChange}
                                         required
-                                        className="w-full px-4 py-3 bg-black border border-amber-400/30 rounded-md 
-                                                 text-white focus:outline-none focus:border-amber-400"
+                                        className={`w-full px-4 py-3 bg-black border rounded-md 
+                                                 text-white focus:outline-none transition-colors duration-300 ${fieldErrors.date ? 'border-red-500/50 focus:border-red-500' : 'border-amber-400/30 focus:border-amber-400'}`}
                                     />
+                                    {fieldErrors.date && (
+                                        <p className="text-red-400 text-sm mt-1">{fieldErrors.date}</p>
+                                    )}
                                 </div>
 
                                 <div>
@@ -91,9 +183,12 @@ export default function ReservePage() {
                                         value={formData.time}
                                         onChange={handleChange}
                                         required
-                                        className="w-full px-4 py-3 bg-black border border-amber-400/30 rounded-md 
-                                                 text-white focus:outline-none focus:border-amber-400"
+                                        className={`w-full px-4 py-3 bg-black border rounded-md 
+                                                 text-white focus:outline-none transition-colors duration-300 ${fieldErrors.time ? 'border-red-500/50 focus:border-red-500' : 'border-amber-400/30 focus:border-amber-400'}`}
                                     />
+                                    {fieldErrors.time && (
+                                        <p className="text-red-400 text-sm mt-1">{fieldErrors.time}</p>
+                                    )}
                                 </div>
                             </div>
 
@@ -108,9 +203,12 @@ export default function ReservePage() {
                                     min="1"
                                     max="20"
                                     required
-                                    className="w-full px-4 py-3 bg-black border border-amber-400/30 rounded-md 
-                                             text-white placeholder-gray-500 focus:outline-none focus:border-amber-400"
+                                    className={`w-full px-4 py-3 bg-black border rounded-md 
+                                             text-white placeholder-gray-500 focus:outline-none transition-colors duration-300 ${fieldErrors.guests ? 'border-red-500/50 focus:border-red-500' : 'border-amber-400/30 focus:border-amber-400'}`}
                                 />
+                                {fieldErrors.guests && (
+                                    <p className="text-red-400 text-sm mt-1">{fieldErrors.guests}</p>
+                                )}
                             </div>
 
                             <div>
