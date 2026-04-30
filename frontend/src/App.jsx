@@ -5,6 +5,7 @@ import Signup from './pages/auth/Register';
 import Cart from './pages/customer/Cart'
 import MenuPage from './pages/customer/MenuPage';
 import Checkout from './pages/customer/Checkout'
+import Orders from './pages/customer/Orders'
 import Profile from './pages/customer/Profile'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import ProtectedRoute from './routes/ProtectedRoute'
@@ -41,6 +42,15 @@ function App() {
           element={
             <ProtectedRoute>
               <Checkout />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/orders"
+          element={
+            <ProtectedRoute>
+              <Orders />
             </ProtectedRoute>
           }
         />
