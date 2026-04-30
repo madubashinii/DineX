@@ -82,6 +82,9 @@ export default function OrdersManager() {
     const [errorMessage, setErrorMessage] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
 
+    const [searchTerm, setSearchTerm] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
     const fetchOrders = async () => {
         try {
             setLoading(true);
@@ -128,9 +131,23 @@ export default function OrdersManager() {
     };
 
     const filteredOrders = useMemo(() => {
-        if (statusFilter === 'All') return orders;
-        return orders.filter((order) => order.status === statusFilter);
-    }, [orders, statusFilter]);
+        let filtered = orders;
+
+        if (statusFilter !== 'All') {
+            filtered = filtered.filter((order) => order.status === statusFilter);
+        }
+
+        if (searchTerm.trim()) {
+            const term = searchTerm.toLowerCase();
+            filtered = filtered.filter((order) =>
+                order._id.toLowerCase().includes(term) ||
+                order.user?.name?.toLowerCase().includes(term) ||
+                order.deliveryAddress?.email?.toLowerCase().includes(term)
+            );
+        }
+
+        return filtered;
+    }, [orders, statusFilter, searchTerm]);
 
     const formatCurrency = (value) => {
         const num = Number(value || 0);
@@ -142,6 +159,18 @@ export default function OrdersManager() {
         return new Date(dateValue).toLocaleDateString();
     };
 
+    const paginatedOrders = useMemo(() => {
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        return filteredOrders.slice(startIndex, startIndex + itemsPerPage);
+    }, [filteredOrders, currentPage]);
+
+    const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+
+    const handlePageChange = (newPage) => {
+        if (newPage >= 1 && newPage <= totalPages) {
+            setCurrentPage(newPage);
+        }
+    };
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between gap-4">
@@ -161,6 +190,14 @@ export default function OrdersManager() {
                             </option>
                         ))}
                     </select>
+
+                    <input
+                        type="text"
+                        placeholder="Search by name, ID, or email..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="px-3 py-2 bg-zinc-800 text-gray-200 rounded-md border border-amber-400/30 text-sm"
+                    />
 
                     <button
                         onClick={fetchOrders}
@@ -208,7 +245,7 @@ export default function OrdersManager() {
                                         </td>
                                     </tr>
                                 ) : (
-                                    filteredOrders.map((order) => (
+                                    paginatedOrders.map((order) => (
                                         <tr key={order._id} className="border-b border-amber-400/10">
                                             <td className="py-4 text-white font-semibold">
                                                 {order._id.slice(-8).toUpperCase()}
@@ -262,6 +299,41 @@ export default function OrdersManager() {
                         </table>
                     )}
                 </div>
+                {totalPages > 1 && (
+                    <div className="p-6 border-t border-amber-400/10 flex flex-col gap-4">
+                        <div className="text-sm text-gray-400">
+                            Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredOrders.length)} of {filteredOrders.length}
+                        </div>
+                        <div className="flex justify-center gap-2 flex-wrap">
+                            <button
+                                onClick={() => handlePageChange(currentPage - 1)}
+                                disabled={currentPage === 1}
+                                className="px-3 py-1 bg-zinc-800 text-gray-400 rounded border border-amber-400/30 disabled:opacity-50"
+                            >
+                                Previous
+                            </button>
+                            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                                <button
+                                    key={page}
+                                    onClick={() => handlePageChange(page)}
+                                    className={`px-3 py-1 rounded border transition-all ${currentPage === page
+                                            ? 'bg-amber-400 text-black border-amber-400 font-semibold'
+                                            : 'bg-zinc-800 text-gray-400 border-amber-400/30'
+                                        }`}
+                                >
+                                    {page}
+                                </button>
+                            ))}
+                            <button
+                                onClick={() => handlePageChange(currentPage + 1)}
+                                disabled={currentPage === totalPages}
+                                className="px-3 py-1 bg-zinc-800 text-gray-400 rounded border border-amber-400/30 disabled:opacity-50"
+                            >
+                                Next
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

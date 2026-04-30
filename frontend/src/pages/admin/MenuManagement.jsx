@@ -114,12 +114,24 @@ export default function MenuManager() {
     const [errorMessage, setErrorMessage] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
 
+    const [searchTerm, setSearchTerm] = useState('');
+
     const [formData, setFormData] = useState({
         name: '',
         description: '',
         category: '',
         price: '',
         image: '',
+        imageFile: null,
+    });
+
+    const filteredMenuItems = menuItems.filter((item) => {
+        const term = searchTerm.toLowerCase();
+        return (
+            item.name?.toLowerCase().includes(term) ||
+            item.category?.toLowerCase().includes(term) ||
+            item.description?.toLowerCase().includes(term)
+        );
     });
 
     const fetchMenuItems = async () => {
@@ -127,7 +139,7 @@ export default function MenuManager() {
             setLoading(true);
             setErrorMessage('');
             const { data } = await API.get('/admin/menu');
-            setMenuItems(data || []);
+            setMenuItems(Array.isArray(data) ? data : data.items || []);
         } catch (error) {
             if (error.response?.status === 401 || error.response?.status === 403) {
                 navigate('/login');
@@ -144,21 +156,24 @@ export default function MenuManager() {
     }, []);
 
     const resetForm = () => {
-        setFormData({
-            name: '',
-            description: '',
-            category: '',
-            price: '',
-            image: '',
-        });
+        setFormData({ name: '', description: '', category: '', price: '', image: '', imageFile: null });
         setEditingId(null);
     };
 
+    const handleImageUpload = (e) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setFormData((prev) => ({ ...prev, image: reader.result, imageFile: file }));
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
     const handleInputChange = (e) => {
-        setFormData((prev) => ({
-            ...prev,
-            [e.target.name]: e.target.value,
-        }));
+        const { name, value } = e.target;
+        setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
     const openCreateForm = () => {
@@ -169,13 +184,7 @@ export default function MenuManager() {
     };
 
     const handleEditStart = (item) => {
-        setFormData({
-            name: item.name || '',
-            description: item.description || '',
-            category: item.category || '',
-            price: item.price ?? '',
-            image: item.image || '',
-        });
+        setFormData({ name: item.name || '', description: item.description || '', category: item.category || '', price: item.price ?? '', image: item.image || '', imageFile: null });
         setEditingId(item._id);
         setShowAddForm(true);
         setErrorMessage('');
@@ -187,8 +196,8 @@ export default function MenuManager() {
         setErrorMessage('');
         setSuccessMessage('');
 
-        if (!formData.name || !formData.category || !formData.price || !formData.image) {
-            setErrorMessage('Name, category, price, and image are required');
+        if (!formData.name || !formData.category || formData.price === '') {
+            setErrorMessage('Name, category and price are required');
             return;
         }
 
@@ -198,7 +207,7 @@ export default function MenuManager() {
                 description: formData.description.trim(),
                 category: formData.category.trim(),
                 price: Number(formData.price),
-                image: formData.image.trim(),
+                image: typeof formData.image === 'string' ? formData.image.trim() : formData.image,
             };
 
             if (editingId) {
@@ -245,101 +254,40 @@ export default function MenuManager() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <h1 className="text-3xl font-serif text-white">Menu Manager</h1>
-                <button
-                    onClick={openCreateForm}
-                    className="bg-gradient-to-r from-amber-400 to-yellow-500 text-black px-6 py-2 rounded-md font-semibold"
-                >
-                    + Add Item
-                </button>
+                <button onClick={openCreateForm} className="bg-gradient-to-r from-amber-400 to-yellow-500 text-black px-6 py-2 rounded-md font-semibold">+ Add Item</button>
             </div>
 
-            {errorMessage && (
-                <div className="p-3 rounded-md bg-red-500/20 text-red-400 border border-red-500/30">
-                    {errorMessage}
-                </div>
-            )}
+            <div className="flex items-center gap-2">
+                <input type="text" placeholder="Search menu items..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="px-3 py-2 bg-zinc-800 text-gray-200 rounded-md border border-amber-400/30 text-sm" />
+            </div>
 
-            {successMessage && (
-                <div className="p-3 rounded-md bg-green-500/20 text-green-400 border border-green-500/30">
-                    {successMessage}
-                </div>
-            )}
+            {errorMessage && <div className="p-3 rounded-md bg-red-500/20 text-red-400 border border-red-500/30">{errorMessage}</div>}
+            {successMessage && <div className="p-3 rounded-md bg-green-500/20 text-green-400 border border-green-500/30">{successMessage}</div>}
 
             {showAddForm && (
                 <div className="bg-zinc-900 rounded-lg p-6 border border-amber-400/20">
-                    <h3 className="text-xl text-white mb-4">
-                        {editingId ? 'Edit Menu Item' : 'Add New Menu Item'}
-                    </h3>
+                    <h3 className="text-xl text-white mb-4">{editingId ? 'Edit Menu Item' : 'Add New Menu Item'}</h3>
 
                     <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <input
-                            type="text"
-                            name="name"
-                            value={formData.name}
-                            onChange={handleInputChange}
-                            placeholder="Item Name"
-                            className="px-4 py-2 bg-black border border-amber-400/30 rounded text-white"
-                            required
-                        />
+                        <input name="name" value={formData.name} onChange={handleInputChange} placeholder="Item Name" className="px-4 py-2 bg-black border border-amber-400/30 rounded text-white" required />
 
-                        <input
-                            type="text"
-                            name="category"
-                            value={formData.category}
-                            onChange={handleInputChange}
-                            placeholder="Category"
-                            className="px-4 py-2 bg-black border border-amber-400/30 rounded text-white"
-                            required
-                        />
+                        <input name="category" value={formData.category} onChange={handleInputChange} placeholder="Category" className="px-4 py-2 bg-black border border-amber-400/30 rounded text-white" required />
 
-                        <input
-                            type="number"
-                            name="price"
-                            value={formData.price}
-                            onChange={handleInputChange}
-                            placeholder="Price"
-                            className="px-4 py-2 bg-black border border-amber-400/30 rounded text-white"
-                            min="0"
-                            step="0.01"
-                            required
-                        />
+                        <input name="price" value={formData.price} onChange={handleInputChange} type="number" placeholder="Price" className="px-4 py-2 bg-black border border-amber-400/30 rounded text-white" min="0" step="0.01" required />
 
-                        <input
-                            type="text"
-                            name="image"
-                            value={formData.image}
-                            onChange={handleInputChange}
-                            placeholder="Image URL"
-                            className="px-4 py-2 bg-black border border-amber-400/30 rounded text-white"
-                            required
-                        />
+                        <div>
+                            <label className="block text-gray-400 text-sm mb-2">{editingId ? 'Update Image (optional)' : 'Image'}</label>
+                            <input type="file" accept="image/*" onChange={handleImageUpload} className="px-4 py-2 bg-black border border-amber-400/30 rounded text-gray-400 w-full" />
+                            {formData.image && <div className="mt-3"><img src={formData.image} alt="Preview" className="h-24 w-24 object-cover rounded" /></div>}
+                        </div>
 
-                        <textarea
-                            name="description"
-                            value={formData.description}
-                            onChange={handleInputChange}
-                            placeholder="Description"
-                            className="md:col-span-2 px-4 py-2 bg-black border border-amber-400/30 rounded text-white"
-                            rows="3"
-                        />
+                        <input type="text" value={typeof formData.image === 'string' && !formData.image.startsWith('data:') ? formData.image : ''} onChange={(e) => setFormData(prev => ({ ...prev, image: e.target.value }))} className="px-4 py-2 bg-black border border-amber-400/30 rounded text-gray-400 text-sm" placeholder="Optional: image URL as fallback" />
+
+                        <textarea name="description" value={formData.description} onChange={handleInputChange} placeholder="Description" className="md:col-span-2 px-4 py-2 bg-black border border-amber-400/30 rounded text-white" rows="3" />
 
                         <div className="md:col-span-2 flex gap-3">
-                            <button
-                                type="submit"
-                                className="bg-gradient-to-r from-amber-400 to-yellow-500 text-black py-2 px-5 rounded-md font-semibold"
-                            >
-                                {editingId ? 'Update Item' : 'Create Item'}
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setShowAddForm(false);
-                                    resetForm();
-                                }}
-                                className="bg-zinc-800 text-gray-300 py-2 px-5 rounded-md border border-amber-400/20"
-                            >
-                                Cancel
-                            </button>
+                            <button type="submit" className="bg-gradient-to-r from-amber-400 to-yellow-500 text-black py-2 px-5 rounded-md font-semibold">{editingId ? 'Update Item' : 'Create Item'}</button>
+                            <button type="button" onClick={() => { setShowAddForm(false); resetForm(); }} className="bg-zinc-800 text-gray-300 py-2 px-5 rounded-md border border-amber-400/20">Cancel</button>
                         </div>
                     </form>
                 </div>
@@ -361,32 +309,20 @@ export default function MenuManager() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {menuItems.length === 0 ? (
+                                {filteredMenuItems.length === 0 ? (
                                     <tr>
-                                        <td className="py-6 text-gray-400" colSpan={5}>
-                                            No menu items found
-                                        </td>
+                                        <td className="py-6 text-gray-400" colSpan={5}>{searchTerm ? 'No matching menu items found' : 'No menu items found'}</td>
                                     </tr>
                                 ) : (
-                                    menuItems.map((item) => (
+                                    filteredMenuItems.map((item) => (
                                         <tr key={item._id} className="border-b border-amber-400/10">
                                             <td className="py-4 text-white">{item.name}</td>
                                             <td className="py-4 text-gray-400">{item.category}</td>
                                             <td className="py-4 text-amber-400 font-semibold">${item.price}</td>
                                             <td className="py-4 text-gray-400 truncate max-w-[220px]">{item.image}</td>
                                             <td className="py-4">
-                                                <button
-                                                    onClick={() => handleEditStart(item)}
-                                                    className="text-amber-400 hover:text-amber-300 mr-3"
-                                                >
-                                                    Edit
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDelete(item._id)}
-                                                    className="text-red-400 hover:text-red-300"
-                                                >
-                                                    Delete
-                                                </button>
+                                                <button onClick={() => handleEditStart(item)} className="text-amber-400 hover:text-amber-300 mr-3">Edit</button>
+                                                <button onClick={() => handleDelete(item._id)} className="text-red-400 hover:text-red-300">Delete</button>
                                             </td>
                                         </tr>
                                     ))

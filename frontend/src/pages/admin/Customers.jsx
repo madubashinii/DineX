@@ -156,11 +156,19 @@ export default function Customers() {
                                             <td className="py-4">
                                                 <select
                                                     value={user.role}
-                                                    onChange={(e) => handleRoleChange(user._id, e.target.value)}
+                                                    onChange={(e) => {
+                                                        const nextRole = e.target.value;
+                                                        if (nextRole === 'admin') {
+                                                            const ok = confirm('Promote this user to admin?');
+                                                            if (!ok) return;
+                                                        }
+                                                        handleRoleChange(user._id, nextRole);
+                                                    }}
                                                     disabled={updatingId === user._id}
                                                     className="px-2 py-1 bg-black border border-amber-400/30 rounded text-gray-200 text-sm"
                                                 >
                                                     <option value="customer">customer</option>
+                                                    <option value="admin">admin</option>
                                                 </select>
                                             </td>
                                         </tr>

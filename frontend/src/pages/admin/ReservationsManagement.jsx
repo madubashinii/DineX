@@ -74,6 +74,9 @@ export default function ReservationsManager() {
     const [errorMessage, setErrorMessage] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
 
+    const [searchTerm, setSearchTerm] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
     const fetchReservations = async () => {
         try {
             setLoading(true);
@@ -123,9 +126,24 @@ export default function ReservationsManager() {
     };
 
     const filteredReservations = useMemo(() => {
-        if (statusFilter === 'All') return reservations;
-        return reservations.filter((reservation) => reservation.status === statusFilter);
-    }, [reservations, statusFilter]);
+        let filtered = reservations;
+
+        if (statusFilter !== 'All') {
+            filtered = filtered.filter((reservation) => reservation.status === statusFilter);
+        }
+
+        if (searchTerm.trim()) {
+            const term = searchTerm.toLowerCase();
+            filtered = filtered.filter((reservation) =>
+                reservation._id.toLowerCase().includes(term) ||
+                reservation.user?.name?.toLowerCase().includes(term) ||
+                reservation.name?.toLowerCase().includes(term) ||
+                reservation.phone?.includes(term)
+            );
+        }
+
+        return filtered;
+    }, [reservations, statusFilter, searchTerm]);
 
     const formatDate = (dateValue) => {
         if (!dateValue) return 'N/A';
@@ -136,6 +154,18 @@ export default function ReservationsManager() {
         return timeValue || 'N/A';
     };
 
+    const paginatedReservations = useMemo(() => {
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        return filteredReservations.slice(startIndex, startIndex + itemsPerPage);
+    }, [filteredReservations, currentPage]);
+
+    const totalPages = Math.ceil(filteredReservations.length / itemsPerPage);
+
+    const handlePageChange = (newPage) => {
+        if (newPage >= 1 && newPage <= totalPages) {
+            setCurrentPage(newPage);
+        }
+    };
 
     return (
         <div className="space-y-6">
@@ -156,6 +186,13 @@ export default function ReservationsManager() {
                             </option>
                         ))}
                     </select>
+                    <input
+                        type="text"
+                        placeholder="Search by name, ID, or phone..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="px-3 py-2 bg-zinc-800 text-gray-200 rounded-md border border-amber-400/30 text-sm"
+                    />
 
                     <button
                         onClick={fetchReservations}
@@ -203,7 +240,7 @@ export default function ReservationsManager() {
                                         </td>
                                     </tr>
                                 ) : (
-                                    filteredReservations.map((reservation) => (
+                                    paginatedReservations.map((reservation) => (
                                         <tr key={reservation._id} className="border-b border-amber-400/10">
                                             <td className="py-4 text-white">
                                                 {reservation.user?.name || 'Unknown'}
