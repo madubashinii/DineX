@@ -118,3 +118,23 @@ export const getUserOrders = asyncHandler(async (req, res) => {
     const orders = await Order.find({ user: req.user._id }).populate('orderItems.menuItem');
     res.json(orders);
 });
+
+export const getOrderById = asyncHandler(async (req, res) => {
+    const order = await Order.findById(req.params.id)
+        .populate('orderItems.menuItem');
+
+    if (!order) {
+        return res.status(404).json({
+            message: 'Order not found'
+        });
+    }
+
+    // only owner can access
+    if (order.user.toString() !== req.user._id.toString()) {
+        return res.status(403).json({
+            message: 'Access denied'
+        });
+    }
+
+    res.json(order);
+});
