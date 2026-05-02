@@ -205,6 +205,20 @@ export default function OrdersPage() {
 
                                     {/* Order Timeline */}
                                     {renderTimeline(order.status)}
+
+                                    {order.status === 'Completed' && (
+                                        <div className="p-6 border-t border-amber-400/10 bg-black/30">
+                                            <button
+                                                onClick={() => navigate(`/review/${order._id}`)}
+                                                className="bg-gradient-to-r from-amber-400 to-yellow-500 text-black
+                     px-6 py-3 rounded-md font-semibold uppercase tracking-wider
+                     hover:shadow-lg hover:shadow-amber-500/40
+                     hover:-translate-y-0.5 transition-all duration-300"
+                                            >
+                                                Write Review
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>

@@ -10,6 +10,7 @@ import Profile from './pages/customer/Profile'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import ProtectedRoute from './routes/ProtectedRoute'
 import ReservePage from './pages/customer/ReservePage';
+import ReviewPage from './pages/customer/ReviewPage';
 
 function App() {
   return (
@@ -54,7 +55,7 @@ function App() {
             </ProtectedRoute>
           }
         />
-
+        <Route path="/review/:orderId" element={<ReviewPage />} />
         <Route
           path="/profile"
           element={
